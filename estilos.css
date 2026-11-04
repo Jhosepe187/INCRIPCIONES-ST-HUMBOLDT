@@ -1,0 +1,57 @@
+:root{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#fff;background:#07396e;--ink:#102d4e;--blue:#0754b0;--ease:cubic-bezier(.23,1,.32,1)}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;min-height:100svh;display:flex;flex-direction:column;isolation:isolate}
+body::before{content:"";position:fixed;inset:0;background:linear-gradient(180deg,#05254955,transparent 45%,#052f61aa),url("assets/patio.webp") center/cover no-repeat;z-index:-1}
+header,footer{margin:0 clamp(20px,5vw,86px);display:flex;align-items:center;justify-content:space-between;gap:12px}
+header{min-height:78px;border-bottom:1px solid #ffffff42}
+.school,footer span,.actions button,.continue,.dialog-icon{display:flex;align-items:center;gap:10px}
+.school{font-size:18px;font-weight:680;letter-spacing:-.03em}.school img{height:32px}
+.portal,footer{font-size:14px}footer{margin-top:auto;min-height:62px;border-top:1px solid #ffffff42}footer svg{width:16px}
+main{flex:1;display:grid;align-items:center}
+svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.symbols,[hidden]{display:none!important}
+#home{text-align:center;padding:clamp(35px,6vh,76px) 20px}
+.hero-brand{display:flex;align-items:center;justify-content:center;gap:clamp(12px,2.1vw,38px);margin:0 auto clamp(35px,6vh,72px)}
+.hero-brand h1{margin:0;width:min(43vw,485px);animation:enter 540ms 70ms var(--ease) both}
+.hero-brand h1 img{width:100%;display:block}
+.crest{width:min(20vw,225px);animation:enter 480ms var(--ease) both}
+@keyframes enter{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
+#home h2{font-size:clamp(18px,2.2vw,26px);margin:0 0 22px;font-weight:640;letter-spacing:-.035em}
+.choices{display:flex;gap:18px;justify-content:center}
+button,input,select{font:inherit}
+button{cursor:pointer;border:0;transition:transform 160ms var(--ease),background-color 160ms ease}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #f7ba22;outline-offset:3px}
+.choices button{background:white;color:var(--ink);display:flex;align-items:center;gap:16px;padding:18px 22px;text-align:left;border-radius:50px;width:min(38vw,330px);box-shadow:0 4px 0 #042f6580}
+.choices button>svg:first-child{color:var(--blue);width:27px;height:27px}.choices strong,.choices small{display:block}
+.choices strong{font-size:clamp(17px,1.7vw,21px);letter-spacing:-.035em}.choices small{font-size:14px;margin-top:3px;color:#425973}
+.arrow{margin-left:auto;width:19px}
+@media(hover:hover) and (pointer:fine){button:not(:disabled):hover{transform:translateY(-3px)}.choices button:hover{background:#f1f7ff}}
+button:not(:disabled):active{transform:translateY(2px) scale(.98)}
+dialog{padding:clamp(24px,5vw,40px);border:0;border-radius:22px;max-width:min(440px,calc(100% - 32px));color:var(--ink);box-shadow:0 16px 80px #001a4270}
+dialog[open]{animation:enter 200ms var(--ease)}dialog::backdrop{background:#031832ba}
+dialog h2,.intro h1{line-height:1.1;letter-spacing:-.045em;font-size:clamp(28px,4vw,40px);margin:8px 0}
+dialog p,.section p,.intro p,.action-area p{line-height:1.5;color:#425873}
+.close{position:absolute;right:14px;top:14px;border-radius:50%;width:44px;height:44px;background:#edf3f8;font-size:25px;color:var(--ink)}
+.dialog-icon{justify-content:center;background:#e8f1fc;color:var(--blue);width:48px;height:48px;border-radius:16px}
+.route,#payment{font-size:14px;font-weight:700;color:var(--blue);margin:20px 0 6px}
+label{font-weight:620;font-size:15px;display:flex;flex-direction:column;gap:7px}
+.stepper{display:flex;align-items:center;gap:8px;margin:10px 0 24px}.stepper input{width:80px;text-align:center;appearance:textfield}.stepper input::-webkit-inner-spin-button{appearance:none}
+.stepper button{width:46px;height:46px;border-radius:12px;background:#e8f1fc;color:var(--blue);font-size:24px}.stepper button:disabled{opacity:.4;cursor:default}
+.continue{justify-content:center;background:var(--blue);color:white;border-radius:12px;min-height:48px;width:100%;font-weight:650}
+#registration{width:min(920px,100%);margin:auto;padding:20px clamp(14px,3vw,32px) 44px}
+.form-top{display:flex;align-items:center;justify-content:space-between;margin:0 0 14px}
+.form-top img{width:105px}.form-top button{background:transparent;color:white;min-height:44px;padding:6px 2px;font-weight:650}
+#enrollment{background:#fff;color:var(--ink);border-radius:20px;padding:clamp(19px,4vw,44px)}
+#payment{margin:0 0 10px}.intro p:last-child{margin:10px 0 22px}
+.section{margin:0 0 22px;padding:0 0 22px;border:0;border-bottom:1px solid #cfdae4;min-inline-size:0}
+.section h2,.section legend{font-size:20px;font-weight:730;color:#006b4a;letter-spacing:-.03em;margin:0 0 15px;padding:0}
+.section p{margin:-6px 0 18px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 20px}
+.wide{grid-column:1/-1}
+input,select{color:var(--ink);min-width:0;width:100%;background:white;border:1px solid #98abba;border-radius:8px;padding:10px 12px;min-height:46px;font-size:16px;font-weight:450}
+select:disabled{background:#f1f4f6}.check{flex-direction:row;align-items:center;gap:10px;margin:12px 0;min-height:44px;cursor:pointer}.check input{width:20px;min-height:0;height:20px;accent-color:var(--blue)}
+#secondary{margin-bottom:20px}.action-area p{font-size:14px}.actions{display:flex;flex-wrap:wrap;gap:14px}
+.raised{padding:13px 20px;color:#fff;border-radius:12px;font-weight:650}.wa{background:#08774f;box-shadow:0 4px 0 #034c32}.sheets{background:var(--blue);box-shadow:0 4px 0 #08336a}
+#status:empty{display:none}#status{font-weight:650;padding-top:7px}
+@media(max-width:620px){header{min-height:62px}.school{font-size:16px}.school img{height:27px}.portal,footer{font-size:12px}.hero-brand{gap:10px;margin-bottom:34px}.crest{width:25vw}.hero-brand h1{width:54vw}.choices{flex-direction:column;align-items:center;gap:14px}.choices button{width:min(100%,355px);padding:15px 20px}.grid{grid-template-columns:1fr}.actions{flex-direction:column}.actions button{justify-content:center}footer{min-height:56px}}
+@media(max-width:360px){.portal{max-width:85px;text-align:right}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}button:not(:disabled):is(:hover,:active){transform:none}}
