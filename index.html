@@ -7,6 +7,7 @@
   <title>Admisión 2027 · Alexander Von Humboldt</title>
   <link rel="icon" href="assets/escudo.png">
   <link rel="stylesheet" href="estilos.css">
+  <link rel="stylesheet" href="integraciones.css">
   <script src="inscripcion.js" defer></script>
 </head>
 <body>
@@ -33,15 +34,16 @@
     <form id="enrollment">
       <div class="intro"><p id="payment"></p><h1 id="form-title" tabindex="-1"></h1><p>Completa los datos del estudiante y de la persona de contacto.</p></div>
       <div id="students"></div>
-      <section class="section"><h2>Datos de la familia</h2><p>Indica a quién podemos contactar sobre la matrícula.</p>
+      <section class="section" aria-label="Contacto de matrícula">
         <div id="primary"></div>
         <label class="check"><input type="checkbox" id="additional"> Agregar otro contacto familiar</label><div id="secondary" hidden></div>
-        <div class="grid"><label>Correo electrónico<input name="correo" type="email" required autocomplete="email"></label><label>Dirección actual<input name="direccion" required autocomplete="street-address"></label><label>Ocupación (opcional)<input name="ocupacion"></label></div>
+        <div class="grid"><label>Correo electrónico<input name="correo" type="email" required autocomplete="email"></label><label>Ocupación (opcional)<input name="ocupacion"></label><label id="address-field" class="wide" hidden>Dirección actual<input name="direccion" autocomplete="street-address" disabled maxlength="200"><small>La consulta DNI de ApisPerú no incluye dirección. Ingresa la dirección actual para completar la ficha.</small></label></div>
       </section>
-      <div class="action-area"><p>Vista de prueba. El envío de datos aún está deshabilitado.</p><div class="actions">
+      <div class="action-area"><p>Envía la matrícula para registrarla en el colegio. Para WhatsApp, prepara la ficha y compártela desde tu celular con el archivo adjunto.</p><div class="actions">
         <button class="wa raised" type="button" id="whatsapp"><svg><use href="#wa"/></svg>WhatsApp</button>
         <button class="sheets raised" type="submit"><svg><use href="#sheet"/></svg>Enviar matrícula</button>
       </div><p id="status" role="status"></p></div>
+      <div id="delivery" hidden><button id="share-pdf" type="button" class="raised share-pdf" hidden>Compartir PDF adjunto</button><p id="share-help"></p><a id="pdf-download" download="matricula-2027.pdf">Descargar una copia del PDF</a> · <a id="whatsapp-chat" target="_blank" rel="noopener">Abrir chat del colegio</a></div>
     </form>
   </section>
 </main>
@@ -55,7 +57,8 @@
 <template id="student-template"><fieldset class="section"><legend></legend><div class="grid">
 <label class="wide">Apellidos y nombres<input data-key="nombre" required></label><label>DNI<input data-key="dni" inputmode="numeric" pattern="[0-9]{8}" maxlength="8" title="Ingresa los 8 dígitos del DNI" required></label>
 <label>Nivel<select data-key="nivel" required><option value="">Selecciona el nivel</option><option>Primaria</option><option>Secundaria</option></select></label><label>Grado al que ingresa<select data-key="grado" required disabled><option value="">Primero elige el nivel</option></select></label>
+<label class="wide">Colegio de procedencia (opcional)<input data-key="procedencia" maxlength="160"></label>
 </div></fieldset></template>
-<template id="contact-template"><div class="grid contact"><label>Parentesco<select data-key="parentesco" required><option value="">Selecciona una opción</option><option>Madre</option><option>Padre</option><option>Apoderado/a</option></select></label><label class="wide">Apellidos y nombres<input data-key="nombre" required></label><label>DNI<input data-key="dni" inputmode="numeric" maxlength="8" pattern="[0-9]{8}" title="Ingresa los 8 dígitos del DNI" required></label><label>Celular<input data-key="celular" type="tel" inputmode="tel" pattern="[0-9]{9}" maxlength="9" title="Ingresa los 9 dígitos del celular" required></label></div></template>
+<template id="contact-template"><div class="contact"><div class="contact-roles" role="group" aria-label="Parentesco"><button type="button" data-role="Madre" aria-pressed="true">Madre</button><button type="button" data-role="Padre" aria-pressed="false">Padre</button><button type="button" data-role="Apoderado/a" aria-pressed="false">Apoderado/a</button></div><input type="hidden" data-key="parentesco" value="Madre"><div class="grid"><label>DNI<input data-key="dni" inputmode="numeric" maxlength="8" pattern="[0-9]{8}" title="Ingresa los 8 dígitos del DNI" required autocomplete="off"></label><label>Celular<input data-key="celular" type="tel" inputmode="tel" pattern="[0-9]{9}" maxlength="9" title="Ingresa los 9 dígitos del celular" required></label><p class="lookup-status" role="status">Los nombres se completarán al ingresar los 8 dígitos del DNI.</p><output class="lookup-name" hidden></output><details class="manual-contact" hidden><summary>Completar nombres manualmente</summary><label>Apellidos y nombres<input data-key="nombre" maxlength="140"></label></details></div></div></template>
 </body>
 </html>

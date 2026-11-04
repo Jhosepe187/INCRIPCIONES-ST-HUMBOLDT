@@ -1,0 +1,11 @@
+#delivery{margin-top:18px;padding:16px;border-radius:10px;background:#edf5ff;font-size:14px}
+#delivery a{color:#0754b0;font-weight:650}
+#delivery p{margin-bottom:0}
+.contact-roles{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 14px}
+.contact-roles button{padding:8px 14px;border-radius:20px;color:var(--ink);background:#edf3f8}
+.contact-roles button[aria-pressed=true]{color:#fff;background:var(--blue)}
+.lookup-status{grid-column:1/-1;margin:0!important;font-size:14px}
+.manual-contact{grid-column:1/-1}
+.manual-contact summary{cursor:pointer;color:#0754b0;font-size:14px;margin-bottom:12px}
+.lookup-name{grid-column:1/-1;padding:10px 12px;border-radius:8px;background:#edf5ff;font-size:15px}
+.share-pdf{margin-bottom:10px;background:#08774f}
