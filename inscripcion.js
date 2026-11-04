@@ -53,7 +53,20 @@ function updateStepper() {
   $('#more').disabled = count.valueAsNumber >= Number(count.max);
 }
 
-$('#new').onclick = () => quantity.showModal();
+const quantities = { nuevo: 1, promovido: 1 };
+let selectedRoute;
+
+function chooseQuantity(route) {
+  selectedRoute = route;
+  count.value = quantities[route];
+  $('.route').textContent = 'Alumno ' + route;
+  $('.dialog-icon use').setAttribute('href', route === 'nuevo' ? '#person' : '#cap');
+  updateStepper();
+  quantity.showModal();
+}
+
+$('#new').onclick = () => chooseQuantity('nuevo');
+$('#returning').onclick = () => chooseQuantity('promovido');
 $('.close').onclick = () => quantity.close();
 count.oninput = updateStepper;
 $('#less').onclick = () => { count.stepDown(); updateStepper(); };
@@ -63,9 +76,9 @@ updateStepper();
 $('#quantity-form').onsubmit = event => {
   event.preventDefault();
   quantity.close();
-  showRegistration('nuevo', count.valueAsNumber);
+  quantities[selectedRoute] = count.valueAsNumber;
+  showRegistration(selectedRoute, count.valueAsNumber);
 };
-$('#returning').onclick = () => showRegistration('promovido', 1);
 $('#back').onclick = () => {
   const isNew = $('#enrollment').dataset.tipo === 'nuevo';
   $('#registration').hidden = true;
@@ -90,5 +103,5 @@ $('#whatsapp').onclick = () => {
 };
 $('#enrollment').onsubmit = event => {
   event.preventDefault();
-  $('#status').textContent = 'Formulario revisado. El envío a Google Sheets aún no está habilitado. Los datos siguen en esta página.';
+  $('#status').textContent = 'Formulario revisado. El envío de la matrícula aún no está habilitado. Los datos siguen en esta página.';
 };
