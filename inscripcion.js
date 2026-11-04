@@ -6,7 +6,6 @@ const count = $('#count');
 const students = $('#students');
 const drafts = { nuevo: [], promovido: [] };
 const grades = {
-  Inicial: ['3 años', '4 años', '5 años'],
   Primaria: ['1.º', '2.º', '3.º', '4.º', '5.º', '6.º'],
   Secundaria: ['1.º', '2.º', '3.º', '4.º', '5.º']
 };
