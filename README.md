@@ -39,9 +39,11 @@ La [documentación oficial de DNI](https://dniruc.apisperu.com/doc#tag/dni) incl
 
 ## WhatsApp y PDF familiar
 
-**Enviar matrícula** prepara la ficha y guarda los datos en Google Sheets en una sola solicitud. Tras confirmarse el registro, la página intenta abrir el menú del celular con el PDF y el mensaje listos. El usuario elige WhatsApp y el contacto del colegio **+51 901 648 212**. Si el navegador requiere otro toque, el mismo botón cambia a **Compartir PDF** y reutiliza el archivo sin repetir el registro.
+**Enviar matrícula** guarda los datos en Google Sheets y prepara la ficha. En `localhost`, el mismo botón cambia a **Compartir PDF**. Al pulsarlo, el servidor abre WhatsApp Web en Chrome o Edge, entra al chat del colegio **+51 901 648 212** y prepara el documento para que el usuario pulse **Enviar** en WhatsApp. Se reutiliza el PDF guardado sin repetir la matrícula.
 
-Compartir el PDF adjunto requiere soporte de `navigator.canShare({files})` y un contexto seguro (HTTPS en el sitio publicado). En navegadores sin soporte, después de guardar se descarga el PDF y se intenta abrir el chat del colegio. Si se bloquea la apertura, queda disponible el enlace. En ese caso se adjunta el archivo descargado en WhatsApp.
+La primera vez, vincula la sesión de WhatsApp Web desde **Dispositivos vinculados** en el celular. Si aparece un QR, escanéalo y vuelve a pulsar **Compartir PDF**. La sesión se conserva en `work/whatsapp-profile`, que se excluye de Git. La opción de adjuntar automáticamente requiere ejecutar el servidor en la misma computadora. Los enlaces de descarga y del chat siguen disponibles.
+
+En celulares, abre el portal publicado por **HTTPS**. En un navegador que admite compartir archivos, **Compartir PDF** abre el menú del dispositivo con la ficha adjunta. Elige WhatsApp, selecciona el chat del colegio y confirma el envío. El navegador deja la selección del chat en manos del usuario. Si el dispositivo no admite compartir PDF, usa los enlaces para descargar la ficha y abrir el chat.
 
 - Un alumno: una ficha individual, inscripción S/ 250, matrícula S/ 450 y pensión S/ 500.
 - Dos hermanos: una página familiar, dos inscripciones de S/ 250 y una fila de matrícula de S/ 450; pensiones de S/ 500 y S/ 470. Diciembre del primer alumno figura en S/ 480, tal como en la imagen recibida.

@@ -44,7 +44,8 @@ test('consulta DNI: nombres, dirección ausente, fallos y token solo en Authoriz
 });
 test('API: registro confirmado, error real de Google, validación y rutas privadas',async t=>{
   const received=[];
-  const server=createApp({lookup:async dni=>({dni,nombre:'CONTACTO PRUEBA',direccion:''}),save:async(data,id)=>{received.push({data,id});if(data.correo==='error@example.com'){const e=new Error('Google no confirmó');e.status=502;throw e;}}}).listen(0,'127.0.0.1');
+  const attached=[];
+  const server=createApp({attachPdf:async pdf=>attached.push(pdf),lookup:async dni=>({dni,nombre:'CONTACTO PRUEBA',direccion:''}),save:async(data,id)=>{received.push({data,id});if(data.correo==='error@example.com'){const e=new Error('Google no confirmó');e.status=502;throw e;}}}).listen(0,'127.0.0.1');
   await new Promise(r=>server.once('listening',r));
   t.after(()=>server.close());
   const base=`http://127.0.0.1:${server.address().port}`;
@@ -63,7 +64,16 @@ test('API: registro confirmado, error real de Google, validación y rutas privad
   const savedPdf = await post('/api/matriculas', sample, {Accept: 'application/pdf'});
   assert.equal(savedPdf.status, 200);
   assert.match(savedPdf.headers.get('content-type'), /application\/pdf/);
-  assert.equal((await savedPdf.text()).slice(0, 5), '%PDF-');
+  const savedBytes = Buffer.from(await savedPdf.arrayBuffer());
+  assert.equal(savedBytes.subarray(0, 5).toString(), '%PDF-');
+  const attach = (origin, body = savedBytes) => fetch(base+'/api/whatsapp/adjuntar', {
+    method:'POST', headers:{'Content-Type':'application/pdf', ...(origin ? {Origin:origin} : {})}, body
+  });
+  assert.equal((await attach()).status, 403);
+  assert.equal((await attach('https://example.com')).status, 403);
+  assert.equal((await attach(base, 'archivo inválido')).status, 400);
+  assert.equal((await attach(base)).status, 200);
+  assert.deepEqual(attached, [savedBytes]);
   const failedPdf = await post('/api/matriculas', {...sample, correo: 'error@example.com'}, {Accept: 'application/pdf'});
   assert.equal(failedPdf.status, 502);
   assert.match(failedPdf.headers.get('content-type'), /application\/json/);

@@ -6,8 +6,9 @@ import {fileURLToPath} from 'node:url';
 import {validate} from './validation.js';
 import {createPdf} from './pdf.js';
 import {lookupDni} from './dni.js';
+import {attachEnrollmentPdf} from './whatsapp.js';
 
-export function createApp({save=saveToSheets,lookup=lookupDni}={}) {
+export function createApp({save=saveToSheets,lookup=lookupDni,attachPdf=attachEnrollmentPdf}={}) {
   const app=express();
   app.disable('x-powered-by');
   app.use(helmet({contentSecurityPolicy:{directives:{'upgrade-insecure-requests':null}}, strictTransportSecurity:process.env.NODE_ENV==='production'?undefined:false}));
@@ -24,6 +25,24 @@ export function createApp({save=saveToSheets,lookup=lookupDni}={}) {
   });
   app.post('/api/pdf',async(req,res,next)=>{
     try {const data=validate(req.body); const pdf=await createPdf(data); res.type('pdf').attachment('matricula-2027.pdf').send(pdf);} catch(e){next(e);}
+  });
+  app.post('/api/whatsapp/adjuntar', (req, res, next) => {
+    const loopback = ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(req.socket.remoteAddress);
+    const localHost = ['localhost', '127.0.0.1', '[::1]'].includes(req.hostname);
+    if (!loopback || !localHost || req.get('origin') !== `${req.protocol}://${req.get('host')}`) {
+      return res.status(403).json({error: 'Para adjuntar desde esta computadora, abre el portal en localhost.'});
+    }
+    next();
+  }, express.raw({type: 'application/pdf', limit: '15mb'}), async (req, res, next) => {
+    try {
+      if (!Buffer.isBuffer(req.body) || req.body.subarray(0, 5).toString() !== '%PDF-') {
+        return res.status(400).json({error: 'La ficha no es un PDF válido.'});
+      }
+      await attachPdf(req.body);
+      res.json({ok: true});
+    } catch (error) {
+      next(error);
+    }
   });
   app.post('/api/matriculas',async(req,res,next)=>{
     try {

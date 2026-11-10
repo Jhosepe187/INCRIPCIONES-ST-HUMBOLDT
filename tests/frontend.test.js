@@ -3,23 +3,30 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {JSDOM} from 'jsdom';
 
-function setup({shareSupported = true, active = true, saveSucceeds = true} = {}){
-  const dom=new JSDOM(readFileSync(new URL('../index.html',import.meta.url),'utf8'),{url:'http://localhost:3000',runScripts:'outside-only'});
+function setup({saveSucceeds = true, attachSucceeds = true, url = 'http://localhost:3000', mobileShare = false} = {}){
+  const dom=new JSDOM(readFileSync(new URL('../index.html',import.meta.url),'utf8'),{url,runScripts:'outside-only'});
   const {window}=dom,doc=window.document;
   window.scrollTo=()=>{};
   window.HTMLDialogElement.prototype.showModal=function(){this.open=true;};
   window.HTMLDialogElement.prototype.close=function(){this.open=false;};
   window.URL.createObjectURL=()=> 'blob:test';window.URL.revokeObjectURL=()=>{};
-  window.File=File;
-  let shared=null,downloads=0;
-  const chatUrls = [];
-  window.open = url => { chatUrls.push(url); return null; };
+  let downloads=0;
+  const attachments = [];
   const submissions = [];
-  const activation = {isActive: active};
-  Object.defineProperty(window.navigator,'userActivation',{value:activation});
-  Object.defineProperty(window.navigator,'canShare',{value:()=>shareSupported});
-  Object.defineProperty(window.navigator,'share',{value:async payload=>{shared=payload;}});
+  const nativeShares = [];
+  window.File = File;
+  if (mobileShare) {
+    window.navigator.canShare = ({files}) => files[0].type === 'application/pdf';
+    window.navigator.share = async data => nativeShares.push(data);
+  }
   window.fetch=async(path,options)=>{
+    if (path === '/api/whatsapp/adjuntar') {
+      attachments.push(options);
+      if (!attachSucceeds && attachments.length === 1) {
+        return new Response(JSON.stringify({error:'Vincula el QR y vuelve a pulsar Compartir PDF.'}), {status:409});
+      }
+      return new Response(JSON.stringify({ok:true}));
+    }
     const body=JSON.parse(options.body);
     if(path==='/api/dni')return new Response(JSON.stringify({dni:body.dni,nombre:'CONTACTO CONSULTADO',direccion:''}));
     if(path==='/api/matriculas') {
@@ -42,7 +49,7 @@ function setup({shareSupported = true, active = true, saveSucceeds = true} = {})
   }
   fill('#primary [data-key=dni]','00012345');fill('#primary [data-key=celular]','900000000');
   fill('[name=correo]','prueba@example.com');fill('[name=direccion]','Dirección de demostración');
-  return {dom,doc,submissions,activation,chatUrls,shared:()=>shared,downloads:()=>downloads};
+  return {dom,doc,submissions,attachments,nativeShares,downloads:()=>downloads};
 }
 async function submit(doc, expectedStatus){
   const buttons = doc.querySelectorAll('.action-area button');
@@ -54,53 +61,63 @@ async function submit(doc, expectedStatus){
   }
   assert.match(status.textContent, expectedStatus);
 }
-test('un clic registra la matrícula y abre compartir con el PDF confirmado',async t=>{
-  const {dom,doc,submissions,shared,downloads}=setup();t.after(()=>dom.window.close());
-  await submit(doc, /Comprueba el envío/);
+test('Compartir PDF prepara la ficha guardada en el chat sin descargarla ni volver a guardar',async t=>{
+  const {dom,doc,submissions,attachments,downloads}=setup();t.after(()=>dom.window.close());
+  await submit(doc, /Pulsa Compartir PDF/);
+  assert.equal(attachments.length, 0);
+  await submit(doc, /PDF adjunto en el chat del colegio/);
   assert.equal(submissions.length, 1);
   assert.equal(submissions[0].headers.Accept, 'application/pdf');
   assert.equal(submissions[0].body.estudiantes.length, 2);
   assert.equal(doc.querySelector('#primary [data-key=nombre]').value,'CONTACTO CONSULTADO');
   assert.equal(doc.querySelector('#address-field').hidden,false);
   assert.equal(downloads(),0);
-  assert.equal(shared().files[0].type,'application/pdf');
-  assert.equal(await shared().files[0].text(),'%PDF-prueba');
+  assert.equal(attachments.length, 1);
+  assert.equal(attachments[0].headers['Content-Type'], 'application/pdf');
+  assert.equal(await attachments[0].body.text(),'%PDF-prueba');
 });
-test('si expira el clic, el mismo botón comparte la ficha sin volver a guardar', async t => {
-  const {dom, doc, submissions, activation, shared} = setup({active: false});
+test('después de vincular el QR se reintenta el adjunto sin duplicar la matrícula', async t => {
+  const {dom, doc, submissions, attachments} = setup({attachSucceeds: false});
   t.after(() => dom.window.close());
   await submit(doc, /Pulsa Compartir PDF/);
-  assert.equal(shared(), null);
-  activation.isActive = true;
-  await submit(doc, /Comprueba el envío/);
+  await submit(doc, /Vincula el QR/);
+  await submit(doc, /PDF adjunto en el chat del colegio/);
   assert.equal(submissions.length, 1);
-  assert.equal(shared().files.length, 1);
+  assert.equal(attachments.length, 2);
 });
-test('en escritorio, descarga el PDF y abre WhatsApp después de guardar', async t => {
-  const {dom, doc, submissions, shared, downloads, chatUrls} = setup({shareSupported: false});
+test('en celular HTTPS se comparte el PDF con el menú del dispositivo', async t => {
+  const {dom, doc, submissions, attachments, nativeShares} = setup({url: 'https://matriculas.example', mobileShare: true});
   t.after(() => dom.window.close());
-  await submit(doc, /Matrícula guardada. Adjunta/);
+  await submit(doc, /elige WhatsApp y el chat del colegio/);
+  await submit(doc, /Confirma el envío/);
   assert.equal(submissions.length, 1);
+  assert.equal(attachments.length, 0);
+  assert.equal(nativeShares.length, 1);
+  assert.equal(await nativeShares[0].files[0].text(), '%PDF-prueba');
+});
+test('en un navegador sin compartir archivos quedan la descarga y el chat', async t => {
+  const {dom, doc, attachments} = setup({url: 'https://matriculas.example'});
+  t.after(() => dom.window.close());
+  await submit(doc, /Descarga la ficha y adjúntala/);
   assert.equal(doc.querySelector('#delivery').hidden, false);
-  assert.equal(downloads(), 1);
-  assert.match(chatUrls[0], /^https:\/\/wa\.me\/51901648212\?text=/);
-  assert.equal(shared(), null);
+  assert.match(doc.querySelector('#whatsapp-chat').href, /^https:\/\/wa\.me\/51901648212/);
+  assert.equal(attachments.length, 0);
 });
 test('un campo obligatorio vacío muestra por qué el botón no envía', async t => {
-  const {dom, doc, submissions, chatUrls} = setup({shareSupported: false});
+  const {dom, doc, submissions, attachments} = setup();
   t.after(() => dom.window.close());
   doc.querySelector('[name=correo]').value = '';
   await submit(doc, /Revisa el campo «Correo electrónico»/);
   assert.equal(submissions.length, 0);
-  assert.equal(chatUrls.length, 0);
+  assert.equal(attachments.length, 0);
 });
 test('si falla el registro no se ofrece compartir y el reintento usa la misma clave', async t => {
-  const {dom, doc, submissions, shared} = setup({saveSucceeds: false});
+  const {dom, doc, submissions, attachments} = setup({saveSucceeds: false});
   t.after(() => dom.window.close());
   await submit(doc, /Google Sheets no confirmó/);
   await submit(doc, /Google Sheets no confirmó/);
   assert.equal(submissions.length, 2);
   assert.equal(submissions[0].headers['Idempotency-Key'], submissions[1].headers['Idempotency-Key']);
   assert.equal(doc.querySelector('#delivery').hidden, true);
-  assert.equal(shared(), null);
+  assert.equal(attachments.length, 0);
 });

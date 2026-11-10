@@ -195,6 +195,7 @@ let submission = null;
 let pdfUrl = null;
 let preparedShare = null;
 let busy = false;
+const localWhatsApp = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
 function readEnrollment() {
   const readGroup = group => Object.fromEntries([...group.querySelectorAll('[data-key]')].map(field => [field.dataset.key, field.value.trim()]));
   return {
@@ -253,27 +254,50 @@ function prepareDelivery(pdf) {
   const message = 'Hola, adjunto la ficha de matrícula 2027 con los datos completos.';
   $('#whatsapp-chat').href = 'https://wa.me/51901648212?text=' + encodeURIComponent(message);
   $('#delivery').hidden = false;
+  if (localWhatsApp) {
+    preparedShare = {pdf};
+    $('#submit-label').textContent = 'Compartir PDF';
+    $('#status').textContent = 'Matrícula guardada. Pulsa Compartir PDF para dejar la ficha adjunta en el chat del colegio.';
+    return;
+  }
   const files = [new File([pdf], 'matricula-2027.pdf', {type: 'application/pdf'})];
   if (navigator.share && navigator.canShare?.({files})) {
     preparedShare = {files, title: 'Ficha de matrícula 2027', text: message};
     $('#submit-label').textContent = 'Compartir PDF';
+    $('#status').textContent = 'Matrícula guardada. Pulsa Compartir PDF y elige WhatsApp y el chat del colegio (+51 901 648 212).';
+    return;
   }
+  $('#status').textContent = 'Matrícula guardada. Descarga la ficha y adjúntala en el chat del colegio.';
 }
 
 async function sharePdf() {
-  const instructions = 'Elige WhatsApp y el contacto del colegio (+51 901 648 212).';
-  if (navigator.userActivation?.isActive === false) {
-    $('#status').textContent = `Matrícula guardada. Pulsa Compartir PDF. ${instructions}`;
+  if (!localWhatsApp) {
+    try {
+      await navigator.share(preparedShare);
+      $('#status').textContent = 'Matrícula guardada. Confirma el envío de la ficha en WhatsApp.';
+    } catch (error) {
+      $('#status').textContent = error.name === 'AbortError'
+        ? 'Matrícula guardada. Puedes volver a pulsar Compartir PDF.'
+        : 'Matrícula guardada. Descarga la ficha y adjúntala en el chat del colegio.';
+    }
     return;
   }
+  $('#status').textContent = 'Abriendo el chat del colegio y preparando el adjunto…';
   try {
-    $('#status').textContent = `Matrícula guardada. ${instructions}`;
-    await navigator.share(preparedShare);
-    $('#status').textContent = 'Matrícula guardada. Comprueba el envío de la ficha en WhatsApp.';
+    const response = await fetch('/api/whatsapp/adjuntar', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/pdf'},
+      body: preparedShare.pdf,
+      signal: AbortSignal.timeout(80000)
+    });
+    const result = await response.json();
+    if (!response.ok || !result.ok) throw new Error(result.error || 'Revisa la ventana de WhatsApp Web.');
+    $('#status').textContent = 'PDF adjunto en el chat del colegio. Pulsa Enviar en WhatsApp.';
   } catch (error) {
-    $('#status').textContent = error.name === 'NotAllowedError' || error.name === 'AbortError'
-      ? `Matrícula guardada. Puedes pulsar Compartir PDF de nuevo. ${instructions}`
-      : 'Matrícula guardada. Descarga la ficha y adjúntala en el chat del colegio.';
+    const message = ['TimeoutError', 'SyntaxError', 'TypeError'].includes(error.name)
+      ? 'No se pudo confirmar el adjunto. Revisa WhatsApp Web y vuelve a pulsar Compartir PDF si la ficha no aparece.'
+      : error.message;
+    $('#status').textContent = `Matrícula guardada. ${message}`;
   }
 }
 
@@ -283,16 +307,8 @@ $('#enrollment').onsubmit = async event => {
   $('#status').textContent = '';
   if (!preparedShare && !validateForm()) return;
   busy = true;
-  let chatWindow = null;
   let controlsLocked = false;
   try {
-    // En escritorio, conservar el permiso del clic mientras se guarda la matrícula.
-    if (!navigator.share || !navigator.canShare) {
-      try {
-        chatWindow = window.open('about:blank', '_blank');
-        if (chatWindow) chatWindow.opener = null;
-      } catch { /* El enlace de WhatsApp queda disponible después del guardado. */ }
-    }
     if (!preparedShare) {
       $('#status').textContent = 'Verificando los datos de contacto…';
       $('#back').disabled = true;
@@ -300,7 +316,9 @@ $('#enrollment').onsubmit = async event => {
     }
     setBusy(true);
     controlsLocked = true;
-    if (!preparedShare) {
+    if (preparedShare) {
+      await sharePdf();
+    } else {
       const data = readEnrollment();
       const fingerprint = JSON.stringify(data);
       if (submission?.fingerprint !== fingerprint) submission = {fingerprint, id: crypto.randomUUID()};
@@ -317,25 +335,9 @@ $('#enrollment').onsubmit = async event => {
       }
       prepareDelivery(submission.pdf);
     }
-    if (preparedShare) {
-      await sharePdf();
-    } else {
-      $('#pdf-download').click();
-      try {
-        const chatUrl = $('#whatsapp-chat').href;
-        if (chatWindow && !chatWindow.closed) {
-          chatWindow.location.replace(chatUrl);
-          chatWindow = null;
-        } else {
-          window.open(chatUrl, '_blank', 'noopener,noreferrer');
-        }
-      } catch { /* El enlace permanece visible si el navegador bloquea la apertura. */ }
-      $('#status').textContent = 'Matrícula guardada. Adjunta el PDF descargado en el chat del colegio. Si el chat no se abrió, usa el enlace de abajo.';
-    }
   } catch (error) {
     $('#status').textContent = error.message;
   } finally {
-    if (chatWindow && !chatWindow.closed) chatWindow.close();
     if (controlsLocked) setBusy(false);
     else $('#back').disabled = false;
     busy = false;
