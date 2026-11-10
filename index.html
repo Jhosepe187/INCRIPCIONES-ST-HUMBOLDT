@@ -16,7 +16,6 @@
   <symbol id="person" viewBox="0 0 24 24"><circle cx="9" cy="7.5" r="3.5"/><path d="M2 21v-2a7 7 0 0 1 14 0v2m3-14v6m-3-3h6"/></symbol>
   <symbol id="cap" viewBox="0 0 24 24"><path d="m2 8 10-5 10 5-10 5zm4 3v5q6 5 12 0v-5m4-3v8"/></symbol>
   <symbol id="pin" viewBox="0 0 24 24"><path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z"/><circle cx="12" cy="10" r="2"/></symbol>
-  <symbol id="wa" viewBox="0 0 24 24"><path d="m3 21 1.4-4A9 9 0 1 1 8 20Z"/><path d="M8.5 7c-2 1 0 5 2 7s5 3 6 1l-2.5-1.8-1.1 1c-1.8-.8-3.2-2.3-4-4l1-1Z"/></symbol>
   <symbol id="sheet" viewBox="0 0 24 24"><path d="M5 2h10l4 4v16H5zM14 2v5h5M8 11h8v7H8zm0 3.5h8M12 11v7"/></symbol>
 </defs></svg>
 <header><div class="school"><img src="assets/escudo.png" alt=""><span>Alexander Von Humboldt</span></div><span class="portal">Portal de inscripciones</span></header>
@@ -31,7 +30,7 @@
   </section>
   <section id="registration" hidden aria-labelledby="form-title">
     <div class="form-top"><button type="button" id="back">← Volver al inicio</button><img src="assets/admision.png" alt="Admisión 2027"></div>
-    <form id="enrollment">
+    <form id="enrollment" novalidate>
       <div class="intro"><p id="payment"></p><h1 id="form-title" tabindex="-1"></h1><p>Completa los datos del estudiante y de la persona de contacto.</p></div>
       <div id="students"></div>
       <section class="section" aria-label="Contacto de matrícula">
@@ -39,11 +38,10 @@
         <label class="check"><input type="checkbox" id="additional"> Agregar otro contacto familiar</label><div id="secondary" hidden></div>
         <div class="grid"><label>Correo electrónico<input name="correo" type="email" required autocomplete="email"></label><label>Ocupación (opcional)<input name="ocupacion"></label><label id="address-field" class="wide" hidden>Dirección actual<input name="direccion" autocomplete="street-address" disabled maxlength="200"><small>La consulta DNI de ApisPerú no incluye dirección. Ingresa la dirección actual para completar la ficha.</small></label></div>
       </section>
-      <div class="action-area"><p>Envía la matrícula para registrarla en el colegio. Para WhatsApp, prepara la ficha y compártela desde tu celular con el archivo adjunto.</p><div class="actions">
-        <button class="wa raised" type="button" id="whatsapp"><svg><use href="#wa"/></svg>WhatsApp</button>
-        <button class="sheets raised" type="submit"><svg><use href="#sheet"/></svg>Enviar matrícula</button>
+      <div class="action-area"><p>Envía la matrícula para registrarla en el colegio y compartir la ficha PDF por WhatsApp.</p><div class="actions">
+        <button class="sheets raised" type="submit"><svg><use href="#sheet"/></svg><span id="submit-label">Enviar matrícula</span></button>
       </div><p id="status" role="status"></p></div>
-      <div id="delivery" hidden><button id="share-pdf" type="button" class="raised share-pdf" hidden>Compartir PDF adjunto</button><p id="share-help"></p><a id="pdf-download" download="matricula-2027.pdf">Descargar una copia del PDF</a> · <a id="whatsapp-chat" target="_blank" rel="noopener">Abrir chat del colegio</a></div>
+      <div id="delivery" hidden><a id="pdf-download" download="matricula-2027.pdf">Descargar ficha PDF</a> · <a id="whatsapp-chat" target="_blank" rel="noopener">Abrir chat del colegio</a></div>
     </form>
   </section>
 </main>

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {JSDOM} from 'jsdom';
 
-function setup(shareSupported=true){
+function setup({shareSupported = true, active = true, saveSucceeds = true} = {}){
   const dom=new JSDOM(readFileSync(new URL('../index.html',import.meta.url),'utf8'),{url:'http://localhost:3000',runScripts:'outside-only'});
   const {window}=dom,doc=window.document;
   window.scrollTo=()=>{};
@@ -12,13 +12,22 @@ function setup(shareSupported=true){
   window.URL.createObjectURL=()=> 'blob:test';window.URL.revokeObjectURL=()=>{};
   window.File=File;
   let shared=null,downloads=0;
+  const chatUrls = [];
+  window.open = url => { chatUrls.push(url); return null; };
+  const submissions = [];
+  const activation = {isActive: active};
+  Object.defineProperty(window.navigator,'userActivation',{value:activation});
   Object.defineProperty(window.navigator,'canShare',{value:()=>shareSupported});
   Object.defineProperty(window.navigator,'share',{value:async payload=>{shared=payload;}});
   window.fetch=async(path,options)=>{
     const body=JSON.parse(options.body);
     if(path==='/api/dni')return new Response(JSON.stringify({dni:body.dni,nombre:'CONTACTO CONSULTADO',direccion:''}));
-    if(path==='/api/pdf')return new Response('%PDF-prueba',{headers:{'Content-Type':'application/pdf'}});
-    throw new Error('No debe escribir matrículas durante esta prueba');
+    if(path==='/api/matriculas') {
+      submissions.push({body, headers: options.headers});
+      if (!saveSucceeds) return new Response(JSON.stringify({error: 'Google Sheets no confirmó el registro.'}), {status: 502});
+      return new Response('%PDF-prueba',{headers:{'Content-Type':'application/pdf'}});
+    }
+    throw new Error('Ruta inesperada: ' + path);
   };
   window.eval(readFileSync(new URL('../inscripcion.js',import.meta.url),'utf8'));
   doc.querySelector('#pdf-download').addEventListener('click',e=>{e.preventDefault();downloads++;});
@@ -33,30 +42,65 @@ function setup(shareSupported=true){
   }
   fill('#primary [data-key=dni]','00012345');fill('#primary [data-key=celular]','900000000');
   fill('[name=correo]','prueba@example.com');fill('[name=direccion]','Dirección de demostración');
-  return {dom,doc,shared:()=>shared,downloads:()=>downloads};
+  return {dom,doc,submissions,activation,chatUrls,shared:()=>shared,downloads:()=>downloads};
 }
-async function prepared(doc){
-  doc.querySelector('#whatsapp').click();
-  for(let i=0;i<100 && doc.querySelector('#delivery').hidden;i++)await new Promise(resolve=>setTimeout(resolve,5));
-  assert.equal(doc.querySelector('#delivery').hidden,false,doc.querySelector('#status').textContent);
+async function submit(doc, expectedStatus){
+  const buttons = doc.querySelectorAll('.action-area button');
+  assert.equal(buttons.length, 1);
+  buttons[0].click();
+  const status = doc.querySelector('#status');
+  for (let i = 0; i < 100 && !expectedStatus.test(status.textContent); i++) {
+    await new Promise(resolve => setTimeout(resolve, 5));
+  }
+  assert.match(status.textContent, expectedStatus);
 }
-test('celular: comparte el archivo PDF y texto sin descargarlo; nombres desde DNI',async t=>{
-  const {dom,doc,shared,downloads}=setup();t.after(()=>dom.window.close());
-  await prepared(doc);
+test('un clic registra la matrícula y abre compartir con el PDF confirmado',async t=>{
+  const {dom,doc,submissions,shared,downloads}=setup();t.after(()=>dom.window.close());
+  await submit(doc, /Comprueba el envío/);
+  assert.equal(submissions.length, 1);
+  assert.equal(submissions[0].headers.Accept, 'application/pdf');
+  assert.equal(submissions[0].body.estudiantes.length, 2);
   assert.equal(doc.querySelector('#primary [data-key=nombre]').value,'CONTACTO CONSULTADO');
   assert.equal(doc.querySelector('#address-field').hidden,false);
-  assert.equal(doc.querySelector('#share-pdf').hidden,false);
   assert.equal(downloads(),0);
-  doc.querySelector('#share-pdf').click();await new Promise(resolve=>setTimeout(resolve,0));
   assert.equal(shared().files[0].type,'application/pdf');
   assert.equal(await shared().files[0].text(),'%PDF-prueba');
-  assert.match(shared().text,/ESTUDIANTE 1.*ESTUDIANTE 2/);
-  assert.match(doc.querySelector('#status').textContent,/no recibe confirmación/);
 });
-test('sin soporte: explica la limitación y no anuncia archivo enviado',async t=>{
-  const {dom,doc,shared}=setup(false);t.after(()=>dom.window.close());
-  await prepared(doc);
-  assert.equal(doc.querySelector('#share-pdf').hidden,true);
-  assert.match(doc.querySelector('#share-help').textContent,/no permite compartir archivos/);
-  assert.equal(shared(),null);
+test('si expira el clic, el mismo botón comparte la ficha sin volver a guardar', async t => {
+  const {dom, doc, submissions, activation, shared} = setup({active: false});
+  t.after(() => dom.window.close());
+  await submit(doc, /Pulsa Compartir PDF/);
+  assert.equal(shared(), null);
+  activation.isActive = true;
+  await submit(doc, /Comprueba el envío/);
+  assert.equal(submissions.length, 1);
+  assert.equal(shared().files.length, 1);
+});
+test('en escritorio, descarga el PDF y abre WhatsApp después de guardar', async t => {
+  const {dom, doc, submissions, shared, downloads, chatUrls} = setup({shareSupported: false});
+  t.after(() => dom.window.close());
+  await submit(doc, /Matrícula guardada. Adjunta/);
+  assert.equal(submissions.length, 1);
+  assert.equal(doc.querySelector('#delivery').hidden, false);
+  assert.equal(downloads(), 1);
+  assert.match(chatUrls[0], /^https:\/\/wa\.me\/51901648212\?text=/);
+  assert.equal(shared(), null);
+});
+test('un campo obligatorio vacío muestra por qué el botón no envía', async t => {
+  const {dom, doc, submissions, chatUrls} = setup({shareSupported: false});
+  t.after(() => dom.window.close());
+  doc.querySelector('[name=correo]').value = '';
+  await submit(doc, /Revisa el campo «Correo electrónico»/);
+  assert.equal(submissions.length, 0);
+  assert.equal(chatUrls.length, 0);
+});
+test('si falla el registro no se ofrece compartir y el reintento usa la misma clave', async t => {
+  const {dom, doc, submissions, shared} = setup({saveSucceeds: false});
+  t.after(() => dom.window.close());
+  await submit(doc, /Google Sheets no confirmó/);
+  await submit(doc, /Google Sheets no confirmó/);
+  assert.equal(submissions.length, 2);
+  assert.equal(submissions[0].headers['Idempotency-Key'], submissions[1].headers['Idempotency-Key']);
+  assert.equal(doc.querySelector('#delivery').hidden, true);
+  assert.equal(shared(), null);
 });

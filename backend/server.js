@@ -30,7 +30,10 @@ export function createApp({save=saveToSheets,lookup=lookupDni}={}) {
       const data=validate(req.body);
       const id=req.get('Idempotency-Key');
       if(!/^[0-9a-f-]{36}$/i.test(id||'')) return res.status(400).json({error:'Falta el identificador de envío.'});
+      // Preparar el archivo antes de guardar evita un registro incompleto si falla el PDF.
+      const pdf = req.get('Accept') === 'application/pdf' ? await createPdf(data) : null;
       await save(data,id);
+      if (pdf) return res.type('pdf').attachment('matricula-2027.pdf').send(pdf);
       res.json({ok:true,id,alumnos:data.estudiantes.length});
     }catch(e){next(e);}
   });

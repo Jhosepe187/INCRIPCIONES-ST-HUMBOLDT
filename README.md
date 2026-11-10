@@ -6,6 +6,8 @@ Frontend del colegio, servidor Node.js, fichas familiares PDF, consulta de DNI c
 
 Requiere Node.js 22 o superior. Instalar dependencias con `pnpm install --frozen-lockfile` (o `npm install`). Copiar `.env.example` a `.env` y ejecutar `npm start`. Abrir http://localhost:3000. No abrir index.html directamente ni usar Live Server: las rutas `/api` requieren el servidor.
 
+En Visual Studio Code, abre la carpeta raíz del proyecto y pulsa **F5** con el perfil **Matrículas: servidor y API de DNI**. Cuando la terminal muestre `Matrículas: http://localhost:3000`, abre o recarga esa dirección. En Windows, el perfil usa `iniciar.ps1`, que también puede encontrar el Node.js de Codex si no hay una instalación en el PATH. Para que ApisPerú responda, el archivo local `.env` debe contener `APISPERU_TOKEN`.
+
 `npm test` ejecuta validación, generación PDF, consulta DNI simulada y pruebas de la API sin escribir en Google ni consumir consultas de ApisPerú. También verifica que el CSS original sea idéntico a FRONTED FINAL.
 
 En esta PC también se puede ejecutar `.\iniciar.ps1` desde PowerShell: usa Node instalado o el runtime local de Codex. Mantener la terminal abierta mientras se usa el sitio. La conexión de Google ya fue configurada localmente en `.env`; ese archivo no se comparte por Git.
@@ -37,16 +39,16 @@ La [documentación oficial de DNI](https://dniruc.apisperu.com/doc#tag/dni) incl
 
 ## WhatsApp y PDF familiar
 
-El botón WhatsApp prepara un PDF en memoria. Luego **Compartir PDF adjunto** abre el menú nativo del celular con el archivo y el texto incluidos. El usuario elige WhatsApp y el colegio **+51 901 648 212**. No tiene que descargar ni buscar el archivo. Se utiliza un segundo clic porque Web Share requiere activación directa del usuario. El sistema no puede seleccionar el destinatario ni confirmar entrega desde el menú nativo.
+**Enviar matrícula** prepara la ficha y guarda los datos en Google Sheets en una sola solicitud. Tras confirmarse el registro, la página intenta abrir el menú del celular con el PDF y el mensaje listos. El usuario elige WhatsApp y el contacto del colegio **+51 901 648 212**. Si el navegador requiere otro toque, el mismo botón cambia a **Compartir PDF** y reutiliza el archivo sin repetir el registro.
 
-Requiere un dispositivo/navegador con soporte de `navigator.canShare({files})` y un contexto seguro (HTTPS en el sitio publicado). En navegadores sin soporte se explica la limitación y se conservan enlaces para descargar una copia y abrir el chat. El enlace `wa.me` por sí solo solo prepara el texto: no adjunta el PDF. El flujo con archivo adjunto se eligió expresamente para celular, sin WhatsApp Business Platform.
+Compartir el PDF adjunto requiere soporte de `navigator.canShare({files})` y un contexto seguro (HTTPS en el sitio publicado). En navegadores sin soporte, después de guardar se descarga el PDF y se intenta abrir el chat del colegio. Si se bloquea la apertura, queda disponible el enlace. En ese caso se adjunta el archivo descargado en WhatsApp.
 
 - Un alumno: una ficha individual, inscripción S/ 250, matrícula S/ 450 y pensión S/ 500.
 - Dos hermanos: una página familiar, dos inscripciones de S/ 250 y una fila de matrícula de S/ 450; pensiones de S/ 500 y S/ 470. Diciembre del primer alumno figura en S/ 480, tal como en la imagen recibida.
 - Tres hermanos: una página familiar, tres inscripciones de S/ 250 y una fila de matrícula de S/ 450; pensiones de S/ 500, S/ 470 y S/ 450.
 - Más de tres: se conservan todos los alumnos en grupos de hasta tres por página; desde el cuarto la tarifa indica “Consultar”, porque no se suministró una tarifa para esos casos.
 
-Las tablas tienen espacios para B/V, operación y fecha; no se marcan pagos como realizados. La ficha conserva nombres, DNI, grado y nivel de cada alumno y los datos de sus contactos. Para guardar en Google Sheets se debe pulsar **Enviar matrícula**. Ningún botón acredita una vacante.
+Las tablas tienen espacios para B/V, operación y fecha; no se marcan pagos como realizados. La ficha conserva nombres, DNI, grado y nivel de cada alumno y los datos de sus contactos. El registro no acredita una vacante.
 
 ## Publicar
 

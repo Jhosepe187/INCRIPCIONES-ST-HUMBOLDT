@@ -40,8 +40,7 @@ function showRegistration(route, total) {
   $('#payment').textContent = isNew ? 'Alumno nuevo · Inscripción y matrícula' : 'Alumno promovido · Solo matrícula';
   $('#form-title').textContent = isNew ? 'Ficha de inscripción' : 'Ficha de matrícula';
   $('#enrollment').dataset.tipo = route;
-  $('#status').textContent = '';
-  $('#delivery').hidden = true;
+  resetDelivery();
   $('#home').hidden = true;
   $('#registration').hidden = false;
   window.scrollTo(0, 0);
@@ -135,7 +134,7 @@ function setupContact(group, initialRole) {
       }catch(error){
         if(sequence!==version || dni.value!==value)return;
         status.textContent=error.message;
-        manual.hidden=false;name.required=true;
+        manual.hidden=false;manual.open=true;name.required=true;
         showAddress();
       }
     })();
@@ -166,16 +165,33 @@ async function ensureFamily() {
   for(const group of groups) {
     if(!group.querySelector('[data-key=nombre]').value.trim()) {
       $('#status').textContent='Consulta el DNI del contacto o completa sus nombres manualmente.';
-      group.querySelector('[data-key=dni]').focus();return false;
+      const manual = group.querySelector('.manual-contact');
+      if (!manual.hidden) {
+        manual.open = true;
+        group.querySelector('[data-key=nombre]').focus();
+      } else {
+        group.querySelector('[data-key=dni]').focus();
+      }
+      return false;
     }
   }
   showAddress();
-  return $('#enrollment').reportValidity();
+  return validateForm();
+}
+
+function validateForm() {
+  const form = $('#enrollment');
+  if (form.reportValidity()) return true;
+  const field = form.querySelector('input:invalid, select:invalid');
+  const label = field?.labels?.[0]?.firstChild?.textContent.trim();
+  $('#status').textContent = label
+    ? `Revisa el campo «${label}». ${field.validationMessage}`
+    : 'Revisa los campos obligatorios del formulario.';
+  return false;
 }
 
 // Integración: datos en memoria; nunca guardar DNI o contactos en localStorage.
 let submission = null;
-let savedFingerprint = null;
 let pdfUrl = null;
 let preparedShare = null;
 let busy = false;
@@ -191,7 +207,6 @@ function readEnrollment() {
   };
 }
 function setBusy(value) {
-  busy=value;
   $('#enrollment').setAttribute('aria-busy', String(value));
   $('#enrollment').querySelectorAll('input,select,button').forEach(el => {
     if(value) {el.dataset.wasDisabled=String(el.disabled); el.disabled=true;}
@@ -199,65 +214,130 @@ function setBusy(value) {
   });
   $('#back').disabled=value;
 }
-async function request(path, data, key) {
+async function request(path, data, headers = {}) {
   let response;
-  try {response = await fetch(path,{method:'POST',headers:{'Content-Type':'application/json',...(key?{'Idempotency-Key':key}:{})},body:JSON.stringify(data)});}
-  catch {throw new Error('No hay conexión con el servidor. Conservamos los datos en el formulario; vuelve a intentar.');}
+  try {
+    response = await fetch(path, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json', ...headers},
+      body: JSON.stringify(data),
+      signal: AbortSignal.timeout(path === '/api/dni' ? 18000 : 65000)
+    });
+  } catch (error) {
+    const message = error.name === 'TimeoutError'
+      ? 'El servidor tardó demasiado en responder. Puedes volver a intentar con los datos del formulario.'
+      : 'No se pudo contactar al servidor de matrículas. Abre el formulario desde http://localhost:3000/ con el servidor iniciado y vuelve a intentar.';
+    throw new Error(message);
+  }
   if(!response.ok) {
     const result=await response.json().catch(()=>({}));
     throw new Error(result.error || 'No se pudo completar la operación. Inicia el proyecto con npm start.');
   }
   return response;
 }
-$('#enrollment').addEventListener('input',()=>{
-  $('#delivery').hidden=true;
-  preparedShare=null;
-  $('#status').textContent='';
-});
-$('#whatsapp').onclick = async () => {
-  if(busy || !$('#enrollment').reportValidity() || !await ensureFamily()) return;
-  const data=readEnrollment();
-  setBusy(true);
-  $('#status').textContent='Generando la ficha PDF…';
+function resetDelivery() {
+  if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+  pdfUrl = null;
+  preparedShare = null;
+  $('#delivery').hidden = true;
+  $('#submit-label').textContent = 'Enviar matrícula';
+  $('#status').textContent = '';
+}
+$('#enrollment').addEventListener('input', resetDelivery);
+$('#enrollment').addEventListener('change', resetDelivery);
+
+function prepareDelivery(pdf) {
+  if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+  pdfUrl = URL.createObjectURL(pdf);
+  $('#pdf-download').href = pdfUrl;
+  const message = 'Hola, adjunto la ficha de matrícula 2027 con los datos completos.';
+  $('#whatsapp-chat').href = 'https://wa.me/51901648212?text=' + encodeURIComponent(message);
+  $('#delivery').hidden = false;
+  const files = [new File([pdf], 'matricula-2027.pdf', {type: 'application/pdf'})];
+  if (navigator.share && navigator.canShare?.({files})) {
+    preparedShare = {files, title: 'Ficha de matrícula 2027', text: message};
+    $('#submit-label').textContent = 'Compartir PDF';
+  }
+}
+
+async function sharePdf() {
+  const instructions = 'Elige WhatsApp y el contacto del colegio (+51 901 648 212).';
+  if (navigator.userActivation?.isActive === false) {
+    $('#status').textContent = `Matrícula guardada. Pulsa Compartir PDF. ${instructions}`;
+    return;
+  }
   try {
-    const response=await request('/api/pdf',data);
-    const blob=await response.blob();
-    if(pdfUrl) URL.revokeObjectURL(pdfUrl);
-    pdfUrl=URL.createObjectURL(blob);
-    const download=$('#pdf-download');
-    download.href=pdfUrl;
-    const message=`Hola, deseo ${data.tipo==='nuevo'?'inscribir y matricular':'matricular'} para 2027 a: ${data.estudiantes.map(s=>`${s.nombre} (${s.grado} ${s.nivel})`).join('; ')}. Adjunto la ficha PDF con los datos completos.`;
-    const url='https://wa.me/51901648212?text='+encodeURIComponent(message);
-    $('#whatsapp-chat').href=url;
-    $('#delivery').hidden=false;
-    const file=new File([blob],'matricula-2027.pdf',{type:'application/pdf'});
-    preparedShare={files:[file],title:'Ficha de matrícula 2027',text:message};
-    const canShare=!!(navigator.share && navigator.canShare?.({files:[file]}));
-    $('#share-pdf').hidden=!canShare;
-    $('#share-help').textContent=canShare?'Pulsa Compartir PDF adjunto, elige WhatsApp y selecciona al colegio: +51 901 648 212. El archivo ya está incluido.':'Este navegador no permite compartir archivos adjuntos. Abre el sitio desde un celular compatible para compartir el PDF ya adjunto. También puedes descargar una copia; abrir el chat por enlace solo prepara el texto.';
-    $('#status').textContent=canShare?'Ficha familiar lista. Pulsa Compartir PDF adjunto para enviarla desde el celular.':'Ficha familiar lista. Este navegador permite descargar el PDF; el envío con archivo adjunto requiere un celular compatible.';
-  }catch(error){$('#status').textContent=error.message;}
-  finally{setBusy(false);}
-};
-// Un segundo clic conserva la activación del usuario requerida por Web Share.
-$('#share-pdf').onclick=async()=>{
-  if(!preparedShare)return;
-  try{await navigator.share(preparedShare);$('#status').textContent='Se completó la acción de compartir. Comprueba en WhatsApp el destinatario y el envío; la web no recibe confirmación de entrega.';}
-  catch(error){$('#status').textContent=error.name==='AbortError'?'Se canceló la acción de compartir. Puedes intentarlo de nuevo.':'No se pudo compartir el archivo desde este dispositivo. Puedes descargar una copia del PDF.';}
-};
+    $('#status').textContent = `Matrícula guardada. ${instructions}`;
+    await navigator.share(preparedShare);
+    $('#status').textContent = 'Matrícula guardada. Comprueba el envío de la ficha en WhatsApp.';
+  } catch (error) {
+    $('#status').textContent = error.name === 'NotAllowedError' || error.name === 'AbortError'
+      ? `Matrícula guardada. Puedes pulsar Compartir PDF de nuevo. ${instructions}`
+      : 'Matrícula guardada. Descarga la ficha y adjúntala en el chat del colegio.';
+  }
+}
+
 $('#enrollment').onsubmit = async event => {
   event.preventDefault();
-  if(busy || !await ensureFamily()) return;
-  const data=readEnrollment();
-  const fingerprint=JSON.stringify(data);
-  if(savedFingerprint===fingerprint){$('#status').textContent='Esta matrícula ya se registró correctamente.';return;}
-  if(!submission || submission.fingerprint!==fingerprint) submission={fingerprint,id:crypto.randomUUID()};
-  setBusy(true);
-  $('#status').textContent='Guardando matrícula en Google Sheets…';
+  if (busy) return;
+  $('#status').textContent = '';
+  if (!preparedShare && !validateForm()) return;
+  busy = true;
+  let chatWindow = null;
+  let controlsLocked = false;
   try {
-    await request('/api/matriculas',data,submission.id);
-    savedFingerprint=fingerprint;
-    $('#status').textContent=`Matrícula registrada correctamente: ${data.estudiantes.length} estudiante(s). Puedes descargar la ficha y compartirla por WhatsApp.`;
-  }catch(error){$('#status').textContent=error.message;}
-  finally{setBusy(false);}
+    // En escritorio, conservar el permiso del clic mientras se guarda la matrícula.
+    if (!navigator.share || !navigator.canShare) {
+      try {
+        chatWindow = window.open('about:blank', '_blank');
+        if (chatWindow) chatWindow.opener = null;
+      } catch { /* El enlace de WhatsApp queda disponible después del guardado. */ }
+    }
+    if (!preparedShare) {
+      $('#status').textContent = 'Verificando los datos de contacto…';
+      $('#back').disabled = true;
+      if (!await ensureFamily()) return;
+    }
+    setBusy(true);
+    controlsLocked = true;
+    if (!preparedShare) {
+      const data = readEnrollment();
+      const fingerprint = JSON.stringify(data);
+      if (submission?.fingerprint !== fingerprint) submission = {fingerprint, id: crypto.randomUUID()};
+      if (!submission.pdf) {
+        $('#status').textContent = 'Guardando matrícula y preparando el PDF…';
+        const response = await request('/api/matriculas', data, {
+          Accept: 'application/pdf',
+          'Idempotency-Key': submission.id
+        });
+        if (!response.headers.get('Content-Type')?.startsWith('application/pdf')) {
+          throw new Error('No se recibió la ficha PDF. Vuelve a pulsar Enviar matrícula.');
+        }
+        submission.pdf = await response.blob();
+      }
+      prepareDelivery(submission.pdf);
+    }
+    if (preparedShare) {
+      await sharePdf();
+    } else {
+      $('#pdf-download').click();
+      try {
+        const chatUrl = $('#whatsapp-chat').href;
+        if (chatWindow && !chatWindow.closed) {
+          chatWindow.location.replace(chatUrl);
+          chatWindow = null;
+        } else {
+          window.open(chatUrl, '_blank', 'noopener,noreferrer');
+        }
+      } catch { /* El enlace permanece visible si el navegador bloquea la apertura. */ }
+      $('#status').textContent = 'Matrícula guardada. Adjunta el PDF descargado en el chat del colegio. Si el chat no se abrió, usa el enlace de abajo.';
+    }
+  } catch (error) {
+    $('#status').textContent = error.message;
+  } finally {
+    if (chatWindow && !chatWindow.closed) chatWindow.close();
+    if (controlsLocked) setBusy(false);
+    else $('#back').disabled = false;
+    busy = false;
+  }
 };

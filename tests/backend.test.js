@@ -48,7 +48,7 @@ test('API: registro confirmado, error real de Google, validación y rutas privad
   await new Promise(r=>server.once('listening',r));
   t.after(()=>server.close());
   const base=`http://127.0.0.1:${server.address().port}`;
-  const post=(path,data)=>fetch(base+path,{method:'POST',headers:{'Content-Type':'application/json','Idempotency-Key':'10000000-0000-4000-8000-000000000001'},body:JSON.stringify(data)});
+  const post=(path,data,headers={})=>fetch(base+path,{method:'POST',headers:{'Content-Type':'application/json','Idempotency-Key':'10000000-0000-4000-8000-000000000001',...headers},body:JSON.stringify(data)});
   assert.equal((await post('/api/matriculas',sample)).status,200);
   assert.equal(received[0].data.estudiantes[0].dni,'00123456');
   assert.equal((await post('/api/matriculas',{...sample,correo:'error@example.com'})).status,502);
@@ -60,4 +60,11 @@ test('API: registro confirmado, error real de Google, validación y rutas privad
   const pdf=await post('/api/pdf',sample);
   assert.match(pdf.headers.get('content-type'),/application\/pdf/);
   assert.equal((await pdf.arrayBuffer()).byteLength>1000,true);
+  const savedPdf = await post('/api/matriculas', sample, {Accept: 'application/pdf'});
+  assert.equal(savedPdf.status, 200);
+  assert.match(savedPdf.headers.get('content-type'), /application\/pdf/);
+  assert.equal((await savedPdf.text()).slice(0, 5), '%PDF-');
+  const failedPdf = await post('/api/matriculas', {...sample, correo: 'error@example.com'}, {Accept: 'application/pdf'});
+  assert.equal(failedPdf.status, 502);
+  assert.match(failedPdf.headers.get('content-type'), /application\/json/);
 });

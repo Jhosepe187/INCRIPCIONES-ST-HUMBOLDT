@@ -1,0 +1,15 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Matrículas: servidor y API de DNI",
+      "type": "node-terminal",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "command": "node backend/server.js",
+      "windows": {
+        "command": "powershell.exe -NoProfile -File ./iniciar.ps1"
+      }
+    }
+  ]
+}
