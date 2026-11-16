@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {JSDOM} from 'jsdom';
 
-function setup({saveSucceeds = true, attachSucceeds = true, url = 'http://localhost:3000', mobileShare = false} = {}){
+function setup({saveSucceeds = true, attachSucceeds = true, url = 'http://localhost:3000', mobileShare = false, shareNeedsTap = false} = {}){
   const dom=new JSDOM(readFileSync(new URL('../index.html',import.meta.url),'utf8'),{url,runScripts:'outside-only'});
   const {window}=dom,doc=window.document;
   window.scrollTo=()=>{};
@@ -17,7 +17,12 @@ function setup({saveSucceeds = true, attachSucceeds = true, url = 'http://localh
   window.File = File;
   if (mobileShare) {
     window.navigator.canShare = ({files}) => files[0].type === 'application/pdf';
-    window.navigator.share = async data => nativeShares.push(data);
+    let blocked = shareNeedsTap;
+    window.navigator.share = async data => {
+      // Algunos celulares rechazan compartir si pasó mucho tiempo desde el toque.
+      if (blocked) { blocked = false; throw new window.DOMException('Requiere un toque', 'NotAllowedError'); }
+      nativeShares.push(data);
+    };
   }
   window.fetch=async(path,options)=>{
     if (path === '/api/whatsapp/adjuntar') {
@@ -61,10 +66,8 @@ async function submit(doc, expectedStatus){
   }
   assert.match(status.textContent, expectedStatus);
 }
-test('Compartir PDF prepara la ficha guardada en el chat sin descargarla ni volver a guardar',async t=>{
+test('un solo clic guarda la matrícula y prepara la ficha en el chat sin descargarla',async t=>{
   const {dom,doc,submissions,attachments,downloads}=setup();t.after(()=>dom.window.close());
-  await submit(doc, /Pulsa Compartir PDF/);
-  assert.equal(attachments.length, 0);
   await submit(doc, /PDF adjunto en el chat del colegio/);
   assert.equal(submissions.length, 1);
   assert.equal(submissions[0].headers.Accept, 'application/pdf');
@@ -79,8 +82,8 @@ test('Compartir PDF prepara la ficha guardada en el chat sin descargarla ni volv
 test('después de vincular el QR se reintenta el adjunto sin duplicar la matrícula', async t => {
   const {dom, doc, submissions, attachments} = setup({attachSucceeds: false});
   t.after(() => dom.window.close());
-  await submit(doc, /Pulsa Compartir PDF/);
   await submit(doc, /Vincula el QR/);
+  assert.equal(doc.querySelector('#submit-label').textContent, 'Compartir PDF');
   await submit(doc, /PDF adjunto en el chat del colegio/);
   assert.equal(submissions.length, 1);
   assert.equal(attachments.length, 2);
@@ -88,12 +91,20 @@ test('después de vincular el QR se reintenta el adjunto sin duplicar la matríc
 test('en celular HTTPS se comparte el PDF con el menú del dispositivo', async t => {
   const {dom, doc, submissions, attachments, nativeShares} = setup({url: 'https://matriculas.example', mobileShare: true});
   t.after(() => dom.window.close());
-  await submit(doc, /elige WhatsApp y el chat del colegio/);
   await submit(doc, /Confirma el envío/);
   assert.equal(submissions.length, 1);
   assert.equal(attachments.length, 0);
   assert.equal(nativeShares.length, 1);
   assert.equal(await nativeShares[0].files[0].text(), '%PDF-prueba');
+});
+test('si el celular pide otro toque para compartir, queda el botón Compartir PDF', async t => {
+  const {dom, doc, submissions, nativeShares} = setup({url: 'https://matriculas.example', mobileShare: true, shareNeedsTap: true});
+  t.after(() => dom.window.close());
+  await submit(doc, /Pulsa Compartir PDF y elige WhatsApp/);
+  assert.equal(nativeShares.length, 0);
+  await submit(doc, /Confirma el envío/);
+  assert.equal(submissions.length, 1);
+  assert.equal(nativeShares.length, 1);
 });
 test('en un navegador sin compartir archivos quedan la descarga y el chat', async t => {
   const {dom, doc, attachments} = setup({url: 'https://matriculas.example'});

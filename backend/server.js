@@ -74,4 +74,12 @@ async function saveToSheets(data,id) {
     if(!result.ok) {const e=new Error(result.error||'Google Sheets no confirmó el registro.');e.status=result.status===409?409:502;throw e;}
   } catch(e) { if(e.status) throw e; const err=new Error('Google Sheets no confirmó el envío. Puedes reintentar sin duplicar la solicitud.');err.status=502;throw err; }
 }
-if(process.argv[1]===fileURLToPath(import.meta.url)) createApp().listen(Number(process.env.PORT)||3000,process.env.HOST||'127.0.0.1',()=>console.log('Matrículas: http://localhost:'+(process.env.PORT||3000)));
+if(process.argv[1]===fileURLToPath(import.meta.url)) {
+  const port=Number(process.env.PORT)||3000;
+  createApp().listen(port,process.env.HOST||'127.0.0.1',()=>console.log('Matrículas: http://localhost:'+port))
+    .on('error',error=>{
+      if(error.code!=='EADDRINUSE')throw error;
+      console.error(`El puerto ${port} ya está en uso: probablemente el servidor ya está abierto en otra terminal. Ciérrala (Ctrl+C) o abre http://localhost:${port}.`);
+      process.exit(1);
+    });
+}

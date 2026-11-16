@@ -278,7 +278,9 @@ async function sharePdf() {
     } catch (error) {
       $('#status').textContent = error.name === 'AbortError'
         ? 'Matrícula guardada. Puedes volver a pulsar Compartir PDF.'
-        : 'Matrícula guardada. Descarga la ficha y adjúntala en el chat del colegio.';
+        : error.name === 'NotAllowedError'
+          ? 'Matrícula guardada. Pulsa Compartir PDF y elige WhatsApp y el chat del colegio (+51 901 648 212).'
+          : 'Matrícula guardada. Descarga la ficha y adjúntala en el chat del colegio.';
     }
     return;
   }
@@ -334,6 +336,9 @@ $('#enrollment').onsubmit = async event => {
         submission.pdf = await response.blob();
       }
       prepareDelivery(submission.pdf);
+      // Un solo clic: tras guardar en Google Sheets se prepara WhatsApp de inmediato.
+      // Si falla (QR sin vincular, celular que exige otro toque), el botón queda como "Compartir PDF".
+      if (preparedShare) await sharePdf();
     }
   } catch (error) {
     $('#status').textContent = error.message;
