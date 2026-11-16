@@ -8,3 +8,88 @@
 .manual-contact{grid-column:1/-1}
 .manual-contact summary{cursor:pointer;color:#0754b0;font-size:14px;margin-bottom:12px}
 .lookup-name{grid-column:1/-1;padding:10px 12px;border-radius:8px;background:#edf5ff;font-size:15px}
+
+/* ---- Mejoras visuales (los estilos originales siguen en estilos.css) ---- */
+
+/* 1. Campos del formulario */
+#enrollment input:not([type=checkbox]),#enrollment select{min-height:48px;background:#f7faff;border-color:#b3c3d2;transition:border-color 160ms ease,box-shadow 160ms ease,background-color 160ms ease}
+@media(hover:hover) and (pointer:fine){#enrollment input:not([type=checkbox]):not(:disabled):hover,#enrollment select:not(:disabled):hover{border-color:var(--blue)}}
+#enrollment input:not([type=checkbox]):focus,#enrollment select:focus{background:#fff;border-color:var(--blue);box-shadow:0 0 0 3px #0754b02e}
+#enrollment select:disabled{background:#f1f4f6;cursor:not-allowed;opacity:.75}
+
+/* 2. Bloque numerado por estudiante */
+#students{counter-reset:alumno}
+#students .section{counter-increment:alumno;padding:20px 20px 22px;margin-bottom:20px;border:1px solid #dbe5ee;border-left:4px solid var(--blue);border-radius:14px;background:linear-gradient(180deg,#f3f8ff,#fff 65%)}
+#students .section legend{float:left;width:100%;display:flex;align-items:center;gap:10px}
+#students .section legend::before{content:counter(alumno);display:grid;place-items:center;flex:none;width:30px;height:30px;border-radius:50%;background:var(--blue);color:#fff;font-size:15px;font-weight:750}
+#students .section .grid{clear:both}
+#students input:not(:focus),#students select:not(:disabled):not(:focus){background:#fff}
+
+/* 3. Botones Madre / Padre / Apoderado/a */
+.contact-roles button{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:10px 18px;font-weight:600}
+.contact-roles button[aria-pressed=true]{box-shadow:0 3px 0 #08336a}
+.contact-roles button[aria-pressed=true]::before{content:"✓";font-weight:800}
+
+/* 4. Línea dorada bajo el título y botón de envío */
+.intro h1::after{content:"";display:block;width:56px;height:4px;margin-top:14px;border-radius:2px;background:#f7ba22}
+#enrollment .sheets{min-height:54px;font-size:17px;background:linear-gradient(135deg,#0a63c9,var(--blue) 55%,#07396e)}
+#enrollment .sheets:disabled{opacity:.65;cursor:progress}
+
+/* 5. Tarjetas del inicio */
+.choices button{box-shadow:0 4px 0 #042f6580,0 14px 30px -12px #001a4280;transition:transform 160ms var(--ease),background-color 160ms ease,box-shadow 200ms ease}
+.choices .arrow{transition:transform 200ms var(--ease)}
+@media(hover:hover) and (pointer:fine){.choices button:hover{box-shadow:0 6px 0 #042f6580,0 20px 36px -12px #001a4299}.choices button:hover .arrow{transform:translateX(4px)}}
+
+/* ---- Animaciones de entrada y de selección ----
+   Reutilizan la curva --ease y la animación "enter" de estilos.css.
+   La regla prefers-reduced-motion de estilos.css las desactiva todas. */
+@keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes pop{0%{transform:scale(.4);opacity:0}70%{transform:scale(1.15);opacity:1}100%{transform:scale(1)}}
+@keyframes reveal{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+@keyframes sheen{from{background-position:-160% 0}to{background-position:260% 0}}
+
+/* Inicio: encabezado, pregunta y tarjetas aparecen escalonados */
+header,footer{animation:fade 600ms ease backwards}
+#home h2{animation:rise 520ms 220ms var(--ease) backwards}
+.choices button{animation:rise 560ms var(--ease) backwards}
+.choices button:nth-child(1){animation-delay:300ms}
+.choices button:nth-child(2){animation-delay:380ms}
+.choices button>svg:first-child{transition:transform 260ms var(--ease)}
+@media(hover:hover) and (pointer:fine){.choices button:hover>svg:first-child{transform:scale(1.12) rotate(-6deg)}}
+
+/* Formulario: la tarjeta sube y los bloques entran uno tras otro */
+.form-top{animation:fade 420ms ease backwards}
+#enrollment{animation:rise 560ms 60ms var(--ease) backwards}
+#enrollment .intro{animation:rise 520ms 160ms var(--ease) backwards}
+.intro h1::after{transform-origin:left;animation:grow 700ms 380ms var(--ease) backwards}
+@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+#students .section{animation:rise 520ms var(--ease) backwards}
+#students .section:nth-child(1){animation-delay:240ms}
+#students .section:nth-child(2){animation-delay:310ms}
+#students .section:nth-child(3){animation-delay:380ms}
+#students .section:nth-child(n+4){animation-delay:440ms}
+#enrollment>.section,#enrollment .action-area{animation:rise 520ms 420ms var(--ease) backwards}
+#students .section legend::before{animation:pop 480ms 520ms var(--ease) backwards}
+
+/* Etiqueta del campo activo se tiñe de azul */
+#enrollment label{transition:color 180ms ease}
+#enrollment label:focus-within{color:var(--blue)}
+
+/* Selección de parentesco */
+.contact-roles button{transition:transform 160ms var(--ease),background-color 220ms ease,color 220ms ease,box-shadow 220ms ease}
+.contact-roles button[aria-pressed=true]::before{display:inline-block;animation:pop 360ms var(--ease) backwards}
+
+/* Contenidos que aparecen al responder */
+#secondary:not([hidden]),#address-field:not([hidden]),.lookup-name:not([hidden]),.manual-contact:not([hidden]),#delivery:not([hidden]){animation:reveal 360ms var(--ease) backwards}
+#status:not(:empty){animation:reveal 300ms var(--ease) backwards}
+.check input{transition:transform 160ms var(--ease)}
+.check input:checked{animation:pop 300ms var(--ease)}
+
+/* Botón de envío: brillo mientras guarda */
+#enrollment[aria-busy=true] .sheets{background-image:linear-gradient(110deg,transparent 30%,#ffffff40 50%,transparent 70%),linear-gradient(135deg,#0a63c9,var(--blue) 55%,#07396e);background-size:60% 100%,100% 100%;background-repeat:no-repeat;animation:sheen 1.2s linear infinite}
+
+/* Diálogo de cantidad: contenido escalonado */
+dialog[open] .dialog-icon{animation:pop 420ms 80ms var(--ease) backwards}
+dialog[open] h2,dialog[open] .route{animation:rise 420ms 120ms var(--ease) backwards}
+dialog[open] .stepper,dialog[open] .continue{animation:rise 420ms 190ms var(--ease) backwards}
