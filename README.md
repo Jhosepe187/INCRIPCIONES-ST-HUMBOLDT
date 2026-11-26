@@ -39,7 +39,7 @@ La [documentación oficial de DNI](https://dniruc.apisperu.com/doc#tag/dni) incl
 
 ## WhatsApp y PDF familiar
 
-**Enviar matrícula** funciona con un solo clic: guarda los datos en Google Sheets y, en cuanto Google confirma el registro, prepara la ficha en WhatsApp. En `localhost`, el servidor abre WhatsApp Web en Chrome o Edge, entra al chat del colegio **+51 901 648 212** y deja el PDF adjunto para que el usuario pulse **Enviar** en WhatsApp. Si ese paso falla (por ejemplo, falta vincular el QR), el botón cambia a **Compartir PDF** para reintentar sin repetir la matrícula.
+**Enviar matrícula** funciona con un solo clic: guarda los datos en Google Sheets y, en cuanto Google confirma el registro, prepara la ficha en WhatsApp. En `localhost`, el servidor abre WhatsApp Web en Chrome o Edge, entra al chat del colegio **+51 901 648 212** y deja el PDF adjunto para que el usuario pulse **Enviar** en WhatsApp. El botón permanece desactivado durante el proceso y muestra **Abriendo WhatsApp…** mientras prepara el adjunto. Si ese paso falla (por ejemplo, falta vincular el QR), el botón cambia a **Compartir PDF** para reintentar sin repetir la matrícula. Si Google no confirma el registro, no se abre WhatsApp.
 
 La primera vez, vincula la sesión de WhatsApp Web desde **Dispositivos vinculados** en el celular. Si aparece un QR, escanéalo y vuelve a pulsar **Compartir PDF**. La sesión se conserva en `work/whatsapp-profile`, que se excluye de Git. La opción de adjuntar automáticamente requiere ejecutar el servidor en la misma computadora. Los enlaces de descarga y del chat siguen disponibles.
 

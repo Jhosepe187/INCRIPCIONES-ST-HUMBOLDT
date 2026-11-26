@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {JSDOM} from 'jsdom';
 
-function setup({saveSucceeds = true, attachSucceeds = true, url = 'http://localhost:3000', mobileShare = false, shareNeedsTap = false} = {}){
+function setup({saveSucceeds = true, attachSucceeds = true, url = 'http://localhost:3000', mobileShare = false, shareNeedsTap = false, beforeSave, beforeAttach} = {}){
   const dom=new JSDOM(readFileSync(new URL('../index.html',import.meta.url),'utf8'),{url,runScripts:'outside-only'});
   const {window}=dom,doc=window.document;
   window.scrollTo=()=>{};
@@ -27,6 +27,7 @@ function setup({saveSucceeds = true, attachSucceeds = true, url = 'http://localh
   window.fetch=async(path,options)=>{
     if (path === '/api/whatsapp/adjuntar') {
       attachments.push(options);
+      await beforeAttach?.();
       if (!attachSucceeds && attachments.length === 1) {
         return new Response(JSON.stringify({error:'Vincula el QR y vuelve a pulsar Compartir PDF.'}), {status:409});
       }
@@ -36,6 +37,7 @@ function setup({saveSucceeds = true, attachSucceeds = true, url = 'http://localh
     if(path==='/api/dni')return new Response(JSON.stringify({dni:body.dni,nombre:'CONTACTO CONSULTADO',direccion:''}));
     if(path==='/api/matriculas') {
       submissions.push({body, headers: options.headers});
+      await beforeSave?.();
       if (!saveSucceeds) return new Response(JSON.stringify({error: 'Google Sheets no confirmó el registro.'}), {status: 502});
       return new Response('%PDF-prueba',{headers:{'Content-Type':'application/pdf'}});
     }
@@ -84,9 +86,41 @@ test('después de vincular el QR se reintenta el adjunto sin duplicar la matríc
   t.after(() => dom.window.close());
   await submit(doc, /Vincula el QR/);
   assert.equal(doc.querySelector('#submit-label').textContent, 'Compartir PDF');
+  assert.equal(doc.querySelector('.action-area button').disabled, false);
   await submit(doc, /PDF adjunto en el chat del colegio/);
   assert.equal(submissions.length, 1);
   assert.equal(attachments.length, 2);
+});
+test('espera la confirmación de Google y bloquea envíos repetidos hasta completar el adjunto', async t => {
+  const saved = Promise.withResolvers();
+  const attached = Promise.withResolvers();
+  const {dom, doc, submissions, attachments} = setup({
+    beforeSave: () => saved.promise,
+    beforeAttach: () => attached.promise
+  });
+  t.after(() => { saved.resolve(); attached.resolve(); dom.window.close(); });
+  await submit(doc, /Guardando matrícula/);
+  const form = doc.querySelector('#enrollment');
+  const button = doc.querySelector('.action-area button');
+  const repeatSubmit = () => form.dispatchEvent(new dom.window.Event('submit', {bubbles:true, cancelable:true}));
+  assert.equal(button.disabled, true);
+  repeatSubmit();
+  assert.equal(submissions.length, 1);
+  assert.equal(attachments.length, 0);
+  saved.resolve();
+  for (let i=0; i<100 && !attachments.length; i++) await new Promise(resolve => setTimeout(resolve, 5));
+  assert.equal(attachments.length, 1);
+  assert.equal(button.disabled, true);
+  assert.equal(doc.querySelector('#back').disabled, true);
+  assert.equal(doc.querySelector('#submit-label').textContent, 'Abriendo WhatsApp…');
+  repeatSubmit();
+  assert.equal(submissions.length, 1);
+  assert.equal(attachments.length, 1);
+  attached.resolve();
+  for (let i=0; i<100 && button.disabled; i++) await new Promise(resolve => setTimeout(resolve, 5));
+  assert.equal(button.disabled, false);
+  assert.equal(form.getAttribute('aria-busy'), 'false');
+  assert.match(doc.querySelector('#status').textContent, /PDF adjunto/);
 });
 test('en celular HTTPS se comparte el PDF con el menú del dispositivo', async t => {
   const {dom, doc, submissions, attachments, nativeShares} = setup({url: 'https://matriculas.example', mobileShare: true});
