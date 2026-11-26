@@ -257,7 +257,7 @@ function prepareDelivery(pdf) {
   if (localWhatsApp) {
     preparedShare = {pdf};
     $('#submit-label').textContent = 'Compartir PDF';
-    $('#status').textContent = 'Matrícula guardada. Pulsa Compartir PDF para dejar la ficha adjunta en el chat del colegio.';
+    $('#status').textContent = 'Matrícula guardada. Preparando la ficha para WhatsApp…';
     return;
   }
   const files = [new File([pdf], 'matricula-2027.pdf', {type: 'application/pdf'})];
@@ -284,7 +284,8 @@ async function sharePdf() {
     }
     return;
   }
-  $('#status').textContent = 'Abriendo el chat del colegio y preparando el adjunto…';
+  $('#submit-label').textContent = 'Abriendo WhatsApp…';
+  $('#status').textContent = 'Matrícula guardada. Abriendo el chat del colegio y preparando el adjunto…';
   try {
     const response = await fetch('/api/whatsapp/adjuntar', {
       method: 'POST',
@@ -300,6 +301,8 @@ async function sharePdf() {
       ? 'No se pudo confirmar el adjunto. Revisa WhatsApp Web y vuelve a pulsar Compartir PDF si la ficha no aparece.'
       : error.message;
     $('#status').textContent = `Matrícula guardada. ${message}`;
+  } finally {
+    $('#submit-label').textContent = 'Compartir PDF';
   }
 }
 
