@@ -1,50 +1,62 @@
 # Inscripciones y matrículas 2027
 
-Frontend del colegio, servidor Node.js, fichas familiares PDF, consulta de DNI con ApisPerú y registro en el Google Sheet existente. `public/css/estilos.css` conserva exactamente el commit `54241f4` (FRONTED FINAL), incluidas sus animaciones; los estilos del formulario están en `integraciones.css` y los de la portada en `inicio.css`.
+Portal de matrículas del colegio Alexander Von Humboldt: portada, formulario, consulta de DNI con ApisPerú, registro en el Google Sheet existente y ficha familiar en PDF. Está hecho para publicarse **dentro del sitio de WordPress** del colegio, como una carpeta (por ejemplo `https://dominio/matriculas/`), sin servidor Node.js ni acceso a cPanel.
+
+- Frontend estático (HTML, CSS y JavaScript sin dependencias).
+- Backend en **PHP 8.0 o superior**, sin bibliotecas externas: lo ejecuta cualquier hosting de WordPress.
+
+`public/css/estilos.css` conserva exactamente el commit `54241f4` (FRONTED FINAL), incluidas sus animaciones; los estilos del formulario están en `integraciones.css` y los de la portada en `inicio.css`.
+
+**Para publicar, ver [docs/PUBLICAR-EN-WORDPRESS.md](docs/PUBLICAR-EN-WORDPRESS.md).**
 
 ## Estructura del proyecto
 
 ```
 .
-├── public/                    Frontend estático (lo único que publica el servidor)
+├── public/                       Carpeta que se sube al hosting (se publica como /matriculas/)
 │   ├── index.html
+│   ├── .htaccess                 Cabeceras de seguridad y caché (Apache)
 │   ├── css/
-│   │   ├── estilos.css        Estilos originales (FRONTED FINAL, no modificar)
-│   │   ├── integraciones.css  Formulario, contactos y entrega del PDF
-│   │   └── inicio.css         Portada, pantalla de carga y animaciones
+│   │   ├── estilos.css           Estilos originales (FRONTED FINAL, no modificar)
+│   │   ├── integraciones.css     Formulario, contactos y entrega del PDF
+│   │   └── inicio.css            Portada, pantalla de carga y animaciones
 │   ├── js/
-│   │   ├── inscripcion.js     Formulario, consulta DNI, envío y WhatsApp
-│   │   └── inicio.js          Pantalla de carga e inclinación 3D de la portada
-│   └── assets/img/            Escudo, fondos e imágenes de la portada (inicio/)
-├── backend/                   Servidor Express: API, validación, PDF, DNI y WhatsApp
-├── google-apps-script/        Script que escribe en el Google Sheet
-├── scripts/iniciar.ps1        Arranque en Windows
-├── tests/                     Pruebas con node:test
-├── .vscode/launch.json        Perfil F5 de Visual Studio Code
-└── .env.example               Variables de entorno necesarias
+│   │   ├── inscripcion.js        Formulario, consulta DNI, envío y compartir PDF
+│   │   └── inicio.js             Pantalla de carga e inclinación 3D de la portada
+│   ├── assets/img/               Escudo, fondos e imágenes de la portada (inicio/)
+│   └── api/
+│       ├── dni.php               POST: consulta de nombres por DNI
+│       ├── matriculas.php        POST: valida, guarda en Google Sheets y devuelve el PDF
+│       ├── config.example.php    Plantilla de claves (se copia como config.php)
+│       └── lib/                  Código interno: validación, DNI, Sheets, PDF, seguridad
+├── google-apps-script/           Script que escribe en el Google Sheet
+├── docs/                         Guía de publicación para el equipo de WordPress
+├── scripts/iniciar.ps1           Servidor local en Windows (pruebas)
+├── tests/                        Pruebas (node:test + servidor PHP integrado)
+└── .vscode/launch.json           Perfil F5 de Visual Studio Code
 ```
 
 ## Portada
 
 La portada sigue el diseño “Portal de Matrículas 2027”: fondo del patio en azul, alumnos a la izquierda, titular con bandas amarilla y roja y los botones **Alumno nuevo** y **Alumno promovido**. Al entrar se muestra una pantalla de carga con el progreso real de imágenes y fuente; luego los elementos aparecen escalonados. Con mouse o trackpad, los alumnos y el titular se inclinan en 3D hacia el puntero. En pantallas táctiles o con “reducir movimiento” activado no hay inclinación, y con “reducir movimiento” tampoco hay animaciones. En celulares la portada se apila en vertical. Las imágenes son WebP optimizados (unos 350 KB en total) y la tipografía Poppins se carga desde Google Fonts.
 
-## Ejecutar
+## Desarrollo local
 
-Requiere Node.js 22 o superior. Instalar dependencias con `pnpm install --frozen-lockfile` (o `npm install`). Copiar `.env.example` a `.env` y ejecutar `npm start`. Abrir http://localhost:3000. No abrir `public/index.html` directamente ni usar Live Server: las rutas `/api` requieren el servidor.
+Requiere PHP 8.0 o superior (con cURL). Para las pruebas también Node.js 22 o superior.
 
-En Visual Studio Code, abre la carpeta raíz del proyecto y pulsa **F5** con el perfil **Matrículas: servidor y API de DNI**. Cuando la terminal muestre `Matrículas: http://localhost:3000`, abre o recarga esa dirección. En Windows, el perfil usa `scripts/iniciar.ps1`, que también puede encontrar el Node.js de Codex si no hay una instalación en el PATH. Para que ApisPerú responda, el archivo local `.env` debe contener `APISPERU_TOKEN`.
+1. Copiar `public/api/config.example.php` como `public/api/config.php` y completar las claves. Sin claves, el portal funciona pero avisa que la consulta de DNI y el guardado no están configurados.
+2. Ejecutar `npm start` (o `php -S localhost:8000 -t public`) y abrir http://localhost:8000. En Visual Studio Code, **F5** con el perfil **Matrículas: servidor PHP local**; en Windows también `.\scripts\iniciar.ps1`.
+3. No abrir `public/index.html` directamente: las rutas `api/*.php` necesitan PHP.
 
-`npm test` ejecuta validación, generación PDF, consulta DNI simulada y pruebas de la API sin escribir en Google ni consumir consultas de ApisPerú. También verifica que el CSS original sea idéntico a FRONTED FINAL.
-
-En esta PC también se puede ejecutar `.\scripts\iniciar.ps1` desde PowerShell: usa Node instalado o el runtime local de Codex. Mantener la terminal abierta mientras se usa el sitio. La conexión de Google ya fue configurada localmente en `.env`; ese archivo no se comparte por Git.
+`npm install` y luego `npm test` ejecutan las pruebas del formulario (jsdom) y del backend PHP: validación, fichas de 1 a 4 hermanos, consulta DNI, guardado, errores de Google, origen, rutas privadas y límites. Usan servicios falsos de Google y ApisPerú: no escriben en el Sheet ni consumen consultas. También verifican que el CSS original sea idéntico a FRONTED FINAL.
 
 ## Conectar el Google Sheet
 
 1. En el archivo https://docs.google.com/spreadsheets/d/1sN5DaUygQIv3lwXmCOyZjHo--saJAkkYYlA-DkXW5iQ/edit abrir **Extensiones → Apps Script**.
 2. Copiar `google-apps-script/Code.gs` al editor. Configurar el manifiesto según `appsscript.json` para usar únicamente el permiso de hojas de cálculo.
-3. Generar una clave aleatoria larga (32 bytes o más). Guardarla en **Configuración del proyecto → Propiedades del script**, nombre `BACKEND_SECRET`. Guardar la misma clave en `.env` como `GOOGLE_SCRIPT_SECRET`. Nunca incluirla en el frontend ni en Git.
+3. Generar una clave aleatoria larga (32 bytes o más). Guardarla en **Configuración del proyecto → Propiedades del script**, nombre `BACKEND_SECRET`. Guardar la misma clave en `config.php` como `google_script_secret`. Nunca incluirla en el frontend ni en Git.
 4. **Implementar → Nueva implementación → Aplicación web**. Ejecutar como propietario, acceso **Cualquier usuario**. Autorizar el acceso a Google Sheets. El script verifica la clave del servidor antes de acceder al documento y no ofrece lectura pública.
-5. Pegar la URL terminada en `/exec` en `GOOGLE_SCRIPT_URL` de `.env` y reiniciar el servidor. Al cambiar el script, actualizar la implementación a una versión nueva.
+5. Pegar la URL terminada en `/exec` en `google_script_url` de `config.php`. Al cambiar el script, actualizar la implementación a una versión nueva.
 
 ### Datos y plantilla
 
@@ -57,31 +69,31 @@ En esta PC también se puede ejecutar `.\scripts\iniciar.ps1` desde PowerShell: 
 
 ## Consulta DNI y formulario
 
-Activar el plan de Consultas DNI/RUC en ApisPerú y configurar `APISPERU_TOKEN` en `.env`. La cuenta de esta PC ya quedó activada en el plan gratuito y el token está configurado. No incluir `.env` en Git.
+Activar el plan de Consultas DNI/RUC en ApisPerú y poner el token en `apisperu_token` de `config.php`.
 
-El servidor consulta `https://dniruc.apisperu.com/api/v1/dni/{dni}` con `Authorization: Bearer` y devuelve únicamente nombres y dirección, si existe. El frontend consulta al completar 8 dígitos, reutiliza resultados en memoria y descarta respuestas anteriores si el DNI cambió. El DNI se envía en el cuerpo del POST, no en la URL de la web. El endpoint tiene un límite adicional de 10 consultas por minuto por IP.
+`api/dni.php` consulta `https://dniruc.apisperu.com/api/v1/dni/{dni}` con `Authorization: Bearer` y devuelve únicamente nombres y dirección, si existe. El token nunca llega al navegador. El frontend consulta al completar 8 dígitos, reutiliza resultados en memoria y descarta respuestas anteriores si el DNI cambió. El DNI se envía en el cuerpo del POST, no en la URL. El endpoint tiene un límite de 10 consultas por minuto por IP (y 30 solicitudes por minuto en total).
 
-La [documentación oficial de DNI](https://dniruc.apisperu.com/doc#tag/dni) incluye nombres y apellidos, **no dirección**. Por eso la dirección se solicita aparte después de la consulta; nunca se inventa ni se considera la dirección de una empresa obtenida por RUC como domicilio personal. Si falla la consulta o se agota el cupo gratuito, se ofrece completar los nombres manualmente. Se retiró el encabezado “Datos de la familia”; los datos principales de contacto son DNI, celular, correo y ocupación. Los botones Madre/Padre/Apoderado identifican correctamente cada contacto en Sheets y en la ficha.
+La [documentación oficial de DNI](https://dniruc.apisperu.com/doc#tag/dni) incluye nombres y apellidos, **no dirección**. Por eso la dirección se solicita aparte después de la consulta; nunca se inventa ni se considera la dirección de una empresa obtenida por RUC como domicilio personal. Si falla la consulta o se agota el cupo gratuito, se ofrece completar los nombres manualmente. Los botones Madre/Padre/Apoderado identifican correctamente cada contacto en Sheets y en la ficha.
 
 ## WhatsApp y PDF familiar
 
-**Enviar matrícula** funciona con un solo clic: guarda los datos en Google Sheets y, en cuanto Google confirma el registro, prepara la ficha en WhatsApp. En `localhost`, el servidor abre WhatsApp Web en Chrome o Edge, entra al chat del colegio **+51 901 648 212** y deja el PDF adjunto para que el usuario pulse **Enviar** en WhatsApp. El botón permanece desactivado durante el proceso y muestra **Abriendo WhatsApp…** mientras prepara el adjunto. Si ese paso falla (por ejemplo, falta vincular el QR), el botón cambia a **Compartir PDF** para reintentar sin repetir la matrícula. Si Google no confirma el registro, no se abre WhatsApp.
+**Enviar matrícula** funciona con un solo clic: guarda los datos en Google Sheets y, solo cuando Google confirma el registro, entrega la ficha PDF. Si Google no confirma, no se entrega la ficha y se puede reintentar sin duplicar la matrícula.
 
-La primera vez, vincula la sesión de WhatsApp Web desde **Dispositivos vinculados** en el celular. Si aparece un QR, escanéalo y vuelve a pulsar **Compartir PDF**. La sesión se conserva en `work/whatsapp-profile`, que se excluye de Git. La opción de adjuntar automáticamente requiere ejecutar el servidor en la misma computadora. Los enlaces de descarga y del chat siguen disponibles.
+- **En celulares** (portal publicado por HTTPS): se abre el menú de compartir del dispositivo con la ficha adjunta; si el celular pide otro toque, aparece **Compartir PDF**. Se elige WhatsApp y el chat del colegio **+51 901 648 212** y se confirma el envío.
+- **En computadoras** o navegadores sin compartir archivos: aparecen **Descargar ficha PDF** y **Abrir chat del colegio** para adjuntarla en WhatsApp.
 
-En celulares, abre el portal publicado por **HTTPS**. En un navegador que admite compartir archivos, al enviar la matrícula se abre el menú del dispositivo con la ficha adjunta; si el celular pide otro toque, aparece **Compartir PDF**. Elige WhatsApp, selecciona el chat del colegio y confirma el envío. El navegador deja la selección del chat en manos del usuario. Si el dispositivo no admite compartir PDF, usa los enlaces para descargar la ficha y abrir el chat.
+No se necesita WhatsApp Business Platform. La versión anterior en Node.js podía adjuntar el PDF en WhatsApp Web de forma automática, pero solo cuando el servidor corría en la misma computadora; en un hosting no es posible y se retiró.
 
 - Un alumno: una ficha individual, inscripción S/ 250, matrícula S/ 450 y pensión S/ 500.
 - Dos hermanos: una página familiar, dos inscripciones de S/ 250 y una fila de matrícula de S/ 450; pensiones de S/ 500 y S/ 470. Diciembre del primer alumno figura en S/ 480, tal como en la imagen recibida.
 - Tres hermanos: una página familiar, tres inscripciones de S/ 250 y una fila de matrícula de S/ 450; pensiones de S/ 500, S/ 470 y S/ 450.
 - Más de tres: se conservan todos los alumnos en grupos de hasta tres por página; desde el cuarto la tarifa indica “Consultar”, porque no se suministró una tarifa para esos casos.
 
-Las tablas tienen espacios para B/V, operación y fecha; no se marcan pagos como realizados. La ficha conserva nombres, DNI, grado y nivel de cada alumno y los datos de sus contactos. El registro no acredita una vacante.
+Las tablas tienen espacios para B/V, operación y fecha; no se marcan pagos como realizados. La ficha conserva nombres, DNI, grado y nivel de cada alumno y los datos de sus contactos. El registro no acredita una vacante. El PDF se genera en PHP con la misma maquetación que tenía la versión Node (pdfkit).
 
-## Publicar
+## Seguridad y datos personales
 
-Se requiere un alojamiento que ejecute Node.js; GitHub Pages no ejecuta el backend. Configurar `HOST=0.0.0.0`, `PORT` y las dos variables de Google como secretos del alojamiento. Usar HTTPS y conservar frontend y API en el mismo origen. Para un proxy inverso, configurar `trust proxy` de Express según la topología real antes de habilitar tráfico público, para que límites de IP y comprobación de origen funcionen correctamente.
-
-Antes de recibir datos reales, revisar los permisos del Sheet: contiene DNI y datos de menores y sus contactos. Mantener acceso solo para las personas autorizadas del colegio. No registrar cuerpos de solicitudes ni claves en los logs. El servidor limita solicitudes y solo publica la carpeta `public/`; el código del servidor, los scripts y `.env` no son accesibles como archivos estáticos.
-
-No se necesita WhatsApp Business Platform para el flujo manual elegido.
+- `config.php` (claves) y `api/lib/` nunca se muestran: PHP responde 404 si se piden directamente y, en Apache, `.htaccess` además los bloquea.
+- Las solicitudes desde otra web se rechazan (comprobación de origen). Hay límites por IP; se guarda un hash de la IP, no la IP.
+- No se registran cuerpos de solicitud ni claves en los logs.
+- Antes de recibir datos reales, revisar los permisos del Sheet: contiene DNI y datos de menores y sus contactos. Mantener acceso solo para las personas autorizadas del colegio.
