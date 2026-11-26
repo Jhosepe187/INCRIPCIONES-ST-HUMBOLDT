@@ -1,0 +1,13 @@
+# Apache: los archivos internos y la configuración no se sirven nunca, ni siquiera
+# si PHP dejara de ejecutarse. En Nginx esta protección la da el propio PHP (responde 404).
+<IfModule mod_authz_core.c>
+  <FilesMatch "^(config|config\.example)\.php$">
+    Require all denied
+  </FilesMatch>
+</IfModule>
+<IfModule !mod_authz_core.c>
+  <FilesMatch "^(config|config\.example)\.php$">
+    Order allow,deny
+    Deny from all
+  </FilesMatch>
+</IfModule>

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {JSDOM} from 'jsdom';
 
-function setup({saveSucceeds = true, attachSucceeds = true, url = 'http://localhost:3000', mobileShare = false, shareNeedsTap = false, beforeSave, beforeAttach} = {}){
+function setup({saveSucceeds = true, url = 'http://localhost:8000/', mobileShare = false, shareNeedsTap = false, beforeSave} = {}){
   const dom=new JSDOM(readFileSync(new URL('../public/index.html',import.meta.url),'utf8'),{url,runScripts:'outside-only'});
   const {window}=dom,doc=window.document;
   window.scrollTo=()=>{};
@@ -11,7 +11,7 @@ function setup({saveSucceeds = true, attachSucceeds = true, url = 'http://localh
   window.HTMLDialogElement.prototype.close=function(){this.open=false;};
   window.URL.createObjectURL=()=> 'blob:test';window.URL.revokeObjectURL=()=>{};
   let downloads=0;
-  const attachments = [];
+  const paths = [];
   const submissions = [];
   const nativeShares = [];
   window.File = File;
@@ -25,17 +25,10 @@ function setup({saveSucceeds = true, attachSucceeds = true, url = 'http://localh
     };
   }
   window.fetch=async(path,options)=>{
-    if (path === '/api/whatsapp/adjuntar') {
-      attachments.push(options);
-      await beforeAttach?.();
-      if (!attachSucceeds && attachments.length === 1) {
-        return new Response(JSON.stringify({error:'Vincula el QR y vuelve a pulsar Compartir PDF.'}), {status:409});
-      }
-      return new Response(JSON.stringify({ok:true}));
-    }
+    paths.push(path);
     const body=JSON.parse(options.body);
-    if(path==='/api/dni')return new Response(JSON.stringify({dni:body.dni,nombre:'CONTACTO CONSULTADO',direccion:''}));
-    if(path==='/api/matriculas') {
+    if(path==='api/dni.php')return new Response(JSON.stringify({dni:body.dni,nombre:'CONTACTO CONSULTADO',direccion:''}));
+    if(path==='api/matriculas.php') {
       submissions.push({body, headers: options.headers});
       await beforeSave?.();
       if (!saveSucceeds) return new Response(JSON.stringify({error: 'Google Sheets no confirmó el registro.'}), {status: 502});
@@ -56,7 +49,7 @@ function setup({saveSucceeds = true, attachSucceeds = true, url = 'http://localh
   }
   fill('#primary [data-key=dni]','00012345');fill('#primary [data-key=celular]','900000000');
   fill('[name=correo]','prueba@example.com');fill('[name=direccion]','Dirección de demostración');
-  return {dom,doc,submissions,attachments,nativeShares,downloads:()=>downloads};
+  return {dom,doc,submissions,paths,nativeShares,downloads:()=>downloads};
 }
 async function submit(doc, expectedStatus){
   const buttons = doc.querySelectorAll('.action-area button');
@@ -68,66 +61,50 @@ async function submit(doc, expectedStatus){
   }
   assert.match(status.textContent, expectedStatus);
 }
-test('un solo clic guarda la matrícula y prepara la ficha en el chat sin descargarla',async t=>{
-  const {dom,doc,submissions,attachments,downloads}=setup();t.after(()=>dom.window.close());
-  await submit(doc, /PDF adjunto en el chat del colegio/);
+test('un solo clic guarda la matrícula y en computadora deja la descarga y el chat del colegio',async t=>{
+  const {dom,doc,submissions,paths,downloads}=setup();t.after(()=>dom.window.close());
+  await submit(doc, /Descarga la ficha y adjúntala en el chat del colegio/);
   assert.equal(submissions.length, 1);
   assert.equal(submissions[0].headers.Accept, 'application/pdf');
   assert.equal(submissions[0].body.estudiantes.length, 2);
   assert.equal(doc.querySelector('#primary [data-key=nombre]').value,'CONTACTO CONSULTADO');
   assert.equal(doc.querySelector('#address-field').hidden,false);
   assert.equal(downloads(),0);
-  assert.equal(attachments.length, 1);
-  assert.equal(attachments[0].headers['Content-Type'], 'application/pdf');
-  assert.equal(await attachments[0].body.text(),'%PDF-prueba');
+  assert.equal(doc.querySelector('#delivery').hidden, false);
+  assert.match(doc.querySelector('#whatsapp-chat').href, /^https:\/\/wa\.me\/51901648212/);
+  assert.deepEqual([...new Set(paths)], ['api/dni.php', 'api/matriculas.php']);
 });
-test('después de vincular el QR se reintenta el adjunto sin duplicar la matrícula', async t => {
-  const {dom, doc, submissions, attachments} = setup({attachSucceeds: false});
+test('las rutas de la API son relativas para funcionar dentro de una carpeta de WordPress', async t => {
+  const {dom, doc, paths} = setup({url: 'https://colegio.example/matriculas/'});
   t.after(() => dom.window.close());
-  await submit(doc, /Vincula el QR/);
-  assert.equal(doc.querySelector('#submit-label').textContent, 'Compartir PDF');
-  assert.equal(doc.querySelector('.action-area button').disabled, false);
-  await submit(doc, /PDF adjunto en el chat del colegio/);
-  assert.equal(submissions.length, 1);
-  assert.equal(attachments.length, 2);
+  await submit(doc, /Descarga la ficha/);
+  assert.ok(paths.length >= 2);
+  assert.ok(paths.every(path => !path.startsWith('/') && path.startsWith('api/') && path.endsWith('.php')));
 });
-test('espera la confirmación de Google y bloquea envíos repetidos hasta completar el adjunto', async t => {
+test('espera la confirmación de Google y bloquea envíos repetidos mientras guarda', async t => {
   const saved = Promise.withResolvers();
-  const attached = Promise.withResolvers();
-  const {dom, doc, submissions, attachments} = setup({
-    beforeSave: () => saved.promise,
-    beforeAttach: () => attached.promise
-  });
-  t.after(() => { saved.resolve(); attached.resolve(); dom.window.close(); });
+  const {dom, doc, submissions} = setup({beforeSave: () => saved.promise});
+  t.after(() => { saved.resolve(); dom.window.close(); });
   await submit(doc, /Guardando matrícula/);
   const form = doc.querySelector('#enrollment');
   const button = doc.querySelector('.action-area button');
   const repeatSubmit = () => form.dispatchEvent(new dom.window.Event('submit', {bubbles:true, cancelable:true}));
   assert.equal(button.disabled, true);
-  repeatSubmit();
-  assert.equal(submissions.length, 1);
-  assert.equal(attachments.length, 0);
-  saved.resolve();
-  for (let i=0; i<100 && !attachments.length; i++) await new Promise(resolve => setTimeout(resolve, 5));
-  assert.equal(attachments.length, 1);
-  assert.equal(button.disabled, true);
   assert.equal(doc.querySelector('#back').disabled, true);
-  assert.equal(doc.querySelector('#submit-label').textContent, 'Abriendo WhatsApp…');
   repeatSubmit();
   assert.equal(submissions.length, 1);
-  assert.equal(attachments.length, 1);
-  attached.resolve();
+  saved.resolve();
   for (let i=0; i<100 && button.disabled; i++) await new Promise(resolve => setTimeout(resolve, 5));
   assert.equal(button.disabled, false);
   assert.equal(form.getAttribute('aria-busy'), 'false');
-  assert.match(doc.querySelector('#status').textContent, /PDF adjunto/);
+  assert.equal(submissions.length, 1);
+  assert.match(doc.querySelector('#status').textContent, /Matrícula guardada/);
 });
 test('en celular HTTPS se comparte el PDF con el menú del dispositivo', async t => {
-  const {dom, doc, submissions, attachments, nativeShares} = setup({url: 'https://matriculas.example', mobileShare: true});
+  const {dom, doc, submissions, nativeShares} = setup({url: 'https://matriculas.example', mobileShare: true});
   t.after(() => dom.window.close());
   await submit(doc, /Confirma el envío/);
   assert.equal(submissions.length, 1);
-  assert.equal(attachments.length, 0);
   assert.equal(nativeShares.length, 1);
   assert.equal(await nativeShares[0].files[0].text(), '%PDF-prueba');
 });
@@ -141,28 +118,25 @@ test('si el celular pide otro toque para compartir, queda el botón Compartir PD
   assert.equal(nativeShares.length, 1);
 });
 test('en un navegador sin compartir archivos quedan la descarga y el chat', async t => {
-  const {dom, doc, attachments} = setup({url: 'https://matriculas.example'});
+  const {dom, doc} = setup({url: 'https://matriculas.example'});
   t.after(() => dom.window.close());
   await submit(doc, /Descarga la ficha y adjúntala/);
   assert.equal(doc.querySelector('#delivery').hidden, false);
   assert.match(doc.querySelector('#whatsapp-chat').href, /^https:\/\/wa\.me\/51901648212/);
-  assert.equal(attachments.length, 0);
 });
 test('un campo obligatorio vacío muestra por qué el botón no envía', async t => {
-  const {dom, doc, submissions, attachments} = setup();
+  const {dom, doc, submissions} = setup();
   t.after(() => dom.window.close());
   doc.querySelector('[name=correo]').value = '';
   await submit(doc, /Revisa el campo «Correo electrónico»/);
   assert.equal(submissions.length, 0);
-  assert.equal(attachments.length, 0);
 });
 test('si falla el registro no se ofrece compartir y el reintento usa la misma clave', async t => {
-  const {dom, doc, submissions, attachments} = setup({saveSucceeds: false});
+  const {dom, doc, submissions} = setup({saveSucceeds: false});
   t.after(() => dom.window.close());
   await submit(doc, /Google Sheets no confirmó/);
   await submit(doc, /Google Sheets no confirmó/);
   assert.equal(submissions.length, 2);
   assert.equal(submissions[0].headers['Idempotency-Key'], submissions[1].headers['Idempotency-Key']);
   assert.equal(doc.querySelector('#delivery').hidden, true);
-  assert.equal(attachments.length, 0);
 });

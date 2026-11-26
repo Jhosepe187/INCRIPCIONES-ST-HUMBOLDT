@@ -122,7 +122,7 @@ function setupContact(group, initialRole) {
     status.textContent='Consultando DNI…';
     const task=(async()=>{
       try {
-        const person=dniCache.get(value)||await (await request('/api/dni',{dni:value})).json();
+        const person=dniCache.get(value)||await (await request(API.dni,{dni:value})).json();
         dniCache.set(value,person);
         if(sequence!==version || dni.value!==value)return;
         name.value=person.nombre;
@@ -195,7 +195,8 @@ let submission = null;
 let pdfUrl = null;
 let preparedShare = null;
 let busy = false;
-const localWhatsApp = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
+// Rutas relativas: el portal funciona en cualquier carpeta del sitio (por ejemplo, /matriculas/).
+const API = {dni: 'api/dni.php', matriculas: 'api/matriculas.php'};
 function readEnrollment() {
   const readGroup = group => Object.fromEntries([...group.querySelectorAll('[data-key]')].map(field => [field.dataset.key, field.value.trim()]));
   return {
@@ -222,17 +223,17 @@ async function request(path, data, headers = {}) {
       method: 'POST',
       headers: {'Content-Type': 'application/json', ...headers},
       body: JSON.stringify(data),
-      signal: AbortSignal.timeout(path === '/api/dni' ? 18000 : 65000)
+      signal: AbortSignal.timeout(path === API.dni ? 18000 : 65000)
     });
   } catch (error) {
     const message = error.name === 'TimeoutError'
       ? 'El servidor tardó demasiado en responder. Puedes volver a intentar con los datos del formulario.'
-      : 'No se pudo contactar al servidor de matrículas. Abre el formulario desde http://localhost:3000/ con el servidor iniciado y vuelve a intentar.';
+      : 'No se pudo contactar al servidor de matrículas. Revisa tu conexión a internet y vuelve a intentar.';
     throw new Error(message);
   }
   if(!response.ok) {
     const result=await response.json().catch(()=>({}));
-    throw new Error(result.error || 'No se pudo completar la operación. Inicia el proyecto con npm start.');
+    throw new Error(result.error || 'No se pudo completar la operación. Intenta nuevamente en unos minutos.');
   }
   return response;
 }
@@ -254,12 +255,6 @@ function prepareDelivery(pdf) {
   const message = 'Hola, adjunto la ficha de matrícula 2027 con los datos completos.';
   $('#whatsapp-chat').href = 'https://wa.me/51901648212?text=' + encodeURIComponent(message);
   $('#delivery').hidden = false;
-  if (localWhatsApp) {
-    preparedShare = {pdf};
-    $('#submit-label').textContent = 'Compartir PDF';
-    $('#status').textContent = 'Matrícula guardada. Preparando la ficha para WhatsApp…';
-    return;
-  }
   const files = [new File([pdf], 'matricula-2027.pdf', {type: 'application/pdf'})];
   if (navigator.share && navigator.canShare?.({files})) {
     preparedShare = {files, title: 'Ficha de matrícula 2027', text: message};
@@ -271,38 +266,15 @@ function prepareDelivery(pdf) {
 }
 
 async function sharePdf() {
-  if (!localWhatsApp) {
-    try {
-      await navigator.share(preparedShare);
-      $('#status').textContent = 'Matrícula guardada. Confirma el envío de la ficha en WhatsApp.';
-    } catch (error) {
-      $('#status').textContent = error.name === 'AbortError'
-        ? 'Matrícula guardada. Puedes volver a pulsar Compartir PDF.'
-        : error.name === 'NotAllowedError'
-          ? 'Matrícula guardada. Pulsa Compartir PDF y elige WhatsApp y el chat del colegio (+51 901 648 212).'
-          : 'Matrícula guardada. Descarga la ficha y adjúntala en el chat del colegio.';
-    }
-    return;
-  }
-  $('#submit-label').textContent = 'Abriendo WhatsApp…';
-  $('#status').textContent = 'Matrícula guardada. Abriendo el chat del colegio y preparando el adjunto…';
   try {
-    const response = await fetch('/api/whatsapp/adjuntar', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/pdf'},
-      body: preparedShare.pdf,
-      signal: AbortSignal.timeout(80000)
-    });
-    const result = await response.json();
-    if (!response.ok || !result.ok) throw new Error(result.error || 'Revisa la ventana de WhatsApp Web.');
-    $('#status').textContent = 'PDF adjunto en el chat del colegio. Pulsa Enviar en WhatsApp.';
+    await navigator.share(preparedShare);
+    $('#status').textContent = 'Matrícula guardada. Confirma el envío de la ficha en WhatsApp.';
   } catch (error) {
-    const message = ['TimeoutError', 'SyntaxError', 'TypeError'].includes(error.name)
-      ? 'No se pudo confirmar el adjunto. Revisa WhatsApp Web y vuelve a pulsar Compartir PDF si la ficha no aparece.'
-      : error.message;
-    $('#status').textContent = `Matrícula guardada. ${message}`;
-  } finally {
-    $('#submit-label').textContent = 'Compartir PDF';
+    $('#status').textContent = error.name === 'AbortError'
+      ? 'Matrícula guardada. Puedes volver a pulsar Compartir PDF.'
+      : error.name === 'NotAllowedError'
+        ? 'Matrícula guardada. Pulsa Compartir PDF y elige WhatsApp y el chat del colegio (+51 901 648 212).'
+        : 'Matrícula guardada. Descarga la ficha y adjúntala en el chat del colegio.';
   }
 }
 
@@ -329,7 +301,7 @@ $('#enrollment').onsubmit = async event => {
       if (submission?.fingerprint !== fingerprint) submission = {fingerprint, id: crypto.randomUUID()};
       if (!submission.pdf) {
         $('#status').textContent = 'Guardando matrícula y preparando el PDF…';
-        const response = await request('/api/matriculas', data, {
+        const response = await request(API.matriculas, data, {
           Accept: 'application/pdf',
           'Idempotency-Key': submission.id
         });
@@ -339,8 +311,8 @@ $('#enrollment').onsubmit = async event => {
         submission.pdf = await response.blob();
       }
       prepareDelivery(submission.pdf);
-      // Un solo clic: tras guardar en Google Sheets se prepara WhatsApp de inmediato.
-      // Si falla (QR sin vincular, celular que exige otro toque), el botón queda como "Compartir PDF".
+      // Un solo clic: tras guardar en Google Sheets se abre el menú de compartir del celular.
+      // Si el celular exige otro toque, el botón queda como "Compartir PDF".
       if (preparedShare) await sharePdf();
     }
   } catch (error) {

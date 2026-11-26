@@ -13,3 +13,6 @@ work/
 Thumbs.db
 .impeccable/
 .claude/
+
+# Claves del backend PHP (copia de public/api/config.example.php)
+public/api/config.php
