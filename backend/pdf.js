@@ -1,6 +1,6 @@
 import PDFDocument from 'pdfkit';
 import {fileURLToPath} from 'node:url';
-const crest=fileURLToPath(new URL('../assets/escudo.png',import.meta.url));
+const crest=fileURLToPath(new URL('../public/assets/img/escudo.png',import.meta.url));
 const GREEN='#00a651',BLUE='#353292';
 const MONTHS=['MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SETIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
 export function pensionFor(total,index,month) {

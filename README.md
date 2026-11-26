@@ -1,6 +1,28 @@
 # Inscripciones y matrículas 2027
 
-Frontend del colegio, servidor Node.js, fichas familiares PDF, consulta de DNI con ApisPerú y registro en el Google Sheet existente. `estilos.css` conserva exactamente el commit `54241f4` (FRONTED FINAL), incluidas sus animaciones; los estilos nuevos están en `integraciones.css`.
+Frontend del colegio, servidor Node.js, fichas familiares PDF, consulta de DNI con ApisPerú y registro en el Google Sheet existente. `public/css/estilos.css` conserva exactamente el commit `54241f4` (FRONTED FINAL), incluidas sus animaciones; los estilos del formulario están en `integraciones.css` y los de la portada en `inicio.css`.
+
+## Estructura del proyecto
+
+```
+.
+├── public/                    Frontend estático (lo único que publica el servidor)
+│   ├── index.html
+│   ├── css/
+│   │   ├── estilos.css        Estilos originales (FRONTED FINAL, no modificar)
+│   │   ├── integraciones.css  Formulario, contactos y entrega del PDF
+│   │   └── inicio.css         Portada, pantalla de carga y animaciones
+│   ├── js/
+│   │   ├── inscripcion.js     Formulario, consulta DNI, envío y WhatsApp
+│   │   └── inicio.js          Pantalla de carga e inclinación 3D de la portada
+│   └── assets/img/            Escudo, fondos e imágenes de la portada (inicio/)
+├── backend/                   Servidor Express: API, validación, PDF, DNI y WhatsApp
+├── google-apps-script/        Script que escribe en el Google Sheet
+├── scripts/iniciar.ps1        Arranque en Windows
+├── tests/                     Pruebas con node:test
+├── .vscode/launch.json        Perfil F5 de Visual Studio Code
+└── .env.example               Variables de entorno necesarias
+```
 
 ## Portada
 
@@ -8,13 +30,13 @@ La portada sigue el diseño “Portal de Matrículas 2027”: fondo del patio en
 
 ## Ejecutar
 
-Requiere Node.js 22 o superior. Instalar dependencias con `pnpm install --frozen-lockfile` (o `npm install`). Copiar `.env.example` a `.env` y ejecutar `npm start`. Abrir http://localhost:3000. No abrir index.html directamente ni usar Live Server: las rutas `/api` requieren el servidor.
+Requiere Node.js 22 o superior. Instalar dependencias con `pnpm install --frozen-lockfile` (o `npm install`). Copiar `.env.example` a `.env` y ejecutar `npm start`. Abrir http://localhost:3000. No abrir `public/index.html` directamente ni usar Live Server: las rutas `/api` requieren el servidor.
 
-En Visual Studio Code, abre la carpeta raíz del proyecto y pulsa **F5** con el perfil **Matrículas: servidor y API de DNI**. Cuando la terminal muestre `Matrículas: http://localhost:3000`, abre o recarga esa dirección. En Windows, el perfil usa `iniciar.ps1`, que también puede encontrar el Node.js de Codex si no hay una instalación en el PATH. Para que ApisPerú responda, el archivo local `.env` debe contener `APISPERU_TOKEN`.
+En Visual Studio Code, abre la carpeta raíz del proyecto y pulsa **F5** con el perfil **Matrículas: servidor y API de DNI**. Cuando la terminal muestre `Matrículas: http://localhost:3000`, abre o recarga esa dirección. En Windows, el perfil usa `scripts/iniciar.ps1`, que también puede encontrar el Node.js de Codex si no hay una instalación en el PATH. Para que ApisPerú responda, el archivo local `.env` debe contener `APISPERU_TOKEN`.
 
 `npm test` ejecuta validación, generación PDF, consulta DNI simulada y pruebas de la API sin escribir en Google ni consumir consultas de ApisPerú. También verifica que el CSS original sea idéntico a FRONTED FINAL.
 
-En esta PC también se puede ejecutar `.\iniciar.ps1` desde PowerShell: usa Node instalado o el runtime local de Codex. Mantener la terminal abierta mientras se usa el sitio. La conexión de Google ya fue configurada localmente en `.env`; ese archivo no se comparte por Git.
+En esta PC también se puede ejecutar `.\scripts\iniciar.ps1` desde PowerShell: usa Node instalado o el runtime local de Codex. Mantener la terminal abierta mientras se usa el sitio. La conexión de Google ya fue configurada localmente en `.env`; ese archivo no se comparte por Git.
 
 ## Conectar el Google Sheet
 
@@ -60,6 +82,6 @@ Las tablas tienen espacios para B/V, operación y fecha; no se marcan pagos como
 
 Se requiere un alojamiento que ejecute Node.js; GitHub Pages no ejecuta el backend. Configurar `HOST=0.0.0.0`, `PORT` y las dos variables de Google como secretos del alojamiento. Usar HTTPS y conservar frontend y API en el mismo origen. Para un proxy inverso, configurar `trust proxy` de Express según la topología real antes de habilitar tráfico público, para que límites de IP y comprobación de origen funcionen correctamente.
 
-Antes de recibir datos reales, revisar los permisos del Sheet: contiene DNI y datos de menores y sus contactos. Mantener acceso solo para las personas autorizadas del colegio. No registrar cuerpos de solicitudes ni claves en los logs. El servidor limita solicitudes y no publica el repositorio ni `.env` como archivos estáticos.
+Antes de recibir datos reales, revisar los permisos del Sheet: contiene DNI y datos de menores y sus contactos. Mantener acceso solo para las personas autorizadas del colegio. No registrar cuerpos de solicitudes ni claves en los logs. El servidor limita solicitudes y solo publica la carpeta `public/`; el código del servidor, los scripts y `.env` no son accesibles como archivos estáticos.
 
 No se necesita WhatsApp Business Platform para el flujo manual elegido.

@@ -8,7 +8,7 @@
       "cwd": "${workspaceFolder}",
       "command": "node backend/server.js",
       "windows": {
-        "command": "powershell.exe -NoProfile -File ./iniciar.ps1"
+        "command": "powershell.exe -NoProfile -File ./scripts/iniciar.ps1"
       }
     }
   ]
