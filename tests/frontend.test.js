@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {JSDOM} from 'jsdom';
 
 function setup({saveSucceeds = true, attachSucceeds = true, url = 'http://localhost:3000', mobileShare = false, shareNeedsTap = false, beforeSave, beforeAttach} = {}){
-  const dom=new JSDOM(readFileSync(new URL('../index.html',import.meta.url),'utf8'),{url,runScripts:'outside-only'});
+  const dom=new JSDOM(readFileSync(new URL('../public/index.html',import.meta.url),'utf8'),{url,runScripts:'outside-only'});
   const {window}=dom,doc=window.document;
   window.scrollTo=()=>{};
   window.HTMLDialogElement.prototype.showModal=function(){this.open=true;};
@@ -43,7 +43,7 @@ function setup({saveSucceeds = true, attachSucceeds = true, url = 'http://localh
     }
     throw new Error('Ruta inesperada: ' + path);
   };
-  window.eval(readFileSync(new URL('../inscripcion.js',import.meta.url),'utf8'));
+  window.eval(readFileSync(new URL('../public/js/inscripcion.js',import.meta.url),'utf8'));
   doc.querySelector('#pdf-download').addEventListener('click',e=>{e.preventDefault();downloads++;});
   doc.querySelector('#new').click();
   doc.querySelector('#count').value='2';

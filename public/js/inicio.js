@@ -25,7 +25,7 @@
 
   const decode = img => (img.decode ? img.decode() : new Promise((ok, fail) => { img.onload = ok; img.onerror = fail; })).catch(() => {});
   const background = new Image();
-  background.src = new URL('fondo-patio.webp', assetBase).href;
+  background.src = new URL('../assets/img/inicio/fondo-patio.webp', assetBase).href;
   const fonts = document.fonts
     ? Promise.all([document.fonts.load('700 92px Poppins'), document.fonts.load('600 84px Poppins')]).then(() => document.fonts.ready)
     : Promise.resolve();

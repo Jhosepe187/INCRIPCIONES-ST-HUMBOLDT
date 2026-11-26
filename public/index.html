@@ -5,22 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#07386d">
   <title>Matrículas 2027 · Alexander Von Humboldt</title>
-  <link rel="icon" href="assets/escudo.png">
-  <link rel="stylesheet" href="estilos.css">
-  <link rel="stylesheet" href="integraciones.css">
+  <link rel="icon" href="assets/img/escudo.png">
+  <link rel="stylesheet" href="css/estilos.css">
+  <link rel="stylesheet" href="css/integraciones.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&display=swap">
-  <link rel="stylesheet" href="assets/inicio/inicio.css">
-  <link rel="preload" as="image" href="assets/inicio/alumnos-frente.webp" fetchpriority="high">
-  <link rel="preload" as="image" href="assets/inicio/alumno-fondo.webp">
-  <script src="assets/inicio/inicio.js" defer></script>
-  <script src="inscripcion.js" defer></script>
+  <link rel="stylesheet" href="css/inicio.css">
+  <link rel="preload" as="image" href="assets/img/inicio/alumnos-frente.webp" fetchpriority="high">
+  <link rel="preload" as="image" href="assets/img/inicio/alumno-fondo.webp">
+  <script src="js/inicio.js" defer></script>
+  <script src="js/inscripcion.js" defer></script>
 </head>
 <body>
 <div class="loader" id="loader" role="status" aria-live="polite">
   <div class="loader-inner">
-    <img class="loader-crest" src="assets/inicio/escudo-blanco.webp" alt="" width="363" height="441">
+    <img class="loader-crest" src="assets/img/inicio/escudo-blanco.webp" alt="" width="363" height="441">
     <p class="loader-name">Alexander Von <b>Humboldt</b></p>
     <div class="loader-bar" aria-hidden="true"><span id="loader-fill"></span></div>
     <span class="sr-only">Cargando el portal de matrículas</span>
@@ -33,15 +33,15 @@
   <symbol id="pin" viewBox="0 0 24 24"><path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z"/><circle cx="12" cy="10" r="2"/></symbol>
   <symbol id="sheet" viewBox="0 0 24 24"><path d="M5 2h10l4 4v16H5zM14 2v5h5M8 11h8v7H8zm0 3.5h8M12 11v7"/></symbol>
 </defs></svg>
-<header><div class="school"><img src="assets/escudo.png" alt=""><span>Alexander Von Humboldt</span></div><span class="portal">Portal de inscripciones</span></header>
+<header><div class="school"><img src="assets/img/escudo.png" alt=""><span>Alexander Von Humboldt</span></div><span class="portal">Portal de inscripciones</span></header>
 <main>
   <section id="home" class="home" aria-labelledby="title">
     <div class="home-bg" aria-hidden="true"></div>
     <div class="home-stage">
       <div class="home-scene" data-tilt="scene">
-        <img class="home-aura" data-layer="aura" src="assets/inicio/aura.webp" alt="" width="823" height="729">
-        <div class="kid kid-back" data-layer="back"><img src="assets/inicio/alumno-fondo.webp" alt="" width="799" height="1242"></div>
-        <div class="kid kid-front" data-layer="front"><img src="assets/inicio/alumnos-frente.webp" alt="Estudiantes del colegio Alexander Von Humboldt con su uniforme" width="1215" height="996" fetchpriority="high"></div>
+        <img class="home-aura" data-layer="aura" src="assets/img/inicio/aura.webp" alt="" width="823" height="729">
+        <div class="kid kid-back" data-layer="back"><img src="assets/img/inicio/alumno-fondo.webp" alt="" width="799" height="1242"></div>
+        <div class="kid kid-front" data-layer="front"><img src="assets/img/inicio/alumnos-frente.webp" alt="Estudiantes del colegio Alexander Von Humboldt con su uniforme" width="1215" height="996" fetchpriority="high"></div>
       </div>
       <div class="home-headline" data-tilt="title">
         <h1 id="title">
@@ -50,7 +50,7 @@
           <span class="line-year" data-layer="year"><span>2027</span></span>
         </h1>
       </div>
-      <div class="home-brand"><img src="assets/inicio/escudo-blanco.webp" alt="" width="363" height="441"><p>Alexander Von <b>Humboldt</b></p></div>
+      <div class="home-brand"><img src="assets/img/inicio/escudo-blanco.webp" alt="" width="363" height="441"><p>Alexander Von <b>Humboldt</b></p></div>
       <div class="home-actions">
         <h2>¿A quién vas a inscribir?</h2>
         <div class="choices">
@@ -61,7 +61,7 @@
     </div>
   </section>
   <section id="registration" hidden aria-labelledby="form-title">
-    <div class="form-top"><button type="button" id="back">← Volver al inicio</button><img src="assets/matriculas.png" alt="Matrículas 2027"></div>
+    <div class="form-top"><button type="button" id="back">← Volver al inicio</button><img src="assets/img/matriculas.png" alt="Matrículas 2027"></div>
     <form id="enrollment" novalidate>
       <div class="intro"><p id="payment"></p><h1 id="form-title" tabindex="-1"></h1><p>Completa los datos del estudiante y de la persona de contacto.</p></div>
       <div id="students"></div>

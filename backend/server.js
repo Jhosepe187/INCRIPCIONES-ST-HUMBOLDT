@@ -56,10 +56,8 @@ export function createApp({save=saveToSheets,lookup=lookupDni,attachPdf=attachEn
       res.json({ok:true,id,alumnos:data.estudiantes.length});
     }catch(e){next(e);}
   });
-  const root=fileURLToPath(new URL('../',import.meta.url));
-  app.get('/',(_req,res)=>res.sendFile(root+'index.html'));
-  for(const name of ['index.html','estilos.css','integraciones.css','inscripcion.js']) app.get('/'+name,(_req,res)=>res.sendFile(root+name));
-  app.use('/assets',express.static(root+'assets'));
+  // Solo se publica la carpeta public/: el código del servidor, .env y los scripts quedan fuera.
+  app.use(express.static(fileURLToPath(new URL('../public/',import.meta.url)),{dotfiles:'ignore'}));
   app.use((error,_req,res,_next)=>res.status(error.status||500).json({error:error.status?error.message:'No se pudo completar la operación. Intenta nuevamente.'}));
   return app;
 }

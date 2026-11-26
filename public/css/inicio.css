@@ -45,7 +45,7 @@ body:has(#home:not([hidden]))>footer{display:none}
   background:
     linear-gradient(180deg,rgb(5 70 143 / 0) 21%,rgb(5 70 143 / .97) 100%),
     linear-gradient(180deg,rgb(5 70 143 / .93) 0%,rgb(5 70 143 / 0) 83%),
-    url("fondo-patio.webp") center 38%/cover no-repeat,
+    url("../assets/img/inicio/fondo-patio.webp") center 38%/cover no-repeat,
     var(--hum-blue);
 }
 

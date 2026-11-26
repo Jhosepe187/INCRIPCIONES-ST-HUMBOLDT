@@ -27,7 +27,7 @@ test('fichas de 1, 2 y 3 hermanos: una página familiar y tarifas de las referen
 });
 test('CSS original y animaciones idénticos a FRONTED FINAL',()=>{
   const baseline=execFileSync('git',['show','54241f4:estilos.css'],{encoding:'utf8'});
-  const current=readFileSync(new URL('../estilos.css',import.meta.url),'utf8');
+  const current=readFileSync(new URL('../public/css/estilos.css',import.meta.url),'utf8');
   assert.equal(current.replace(/\r\n/g,'\n'),baseline.replace(/\r\n/g,'\n'));
 });
 test('consulta DNI: nombres, dirección ausente, fallos y token solo en Authorization',async()=>{

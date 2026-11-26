@@ -1,3 +1,6 @@
+/* estilos.css debe quedar idéntico al commit 54241f4 y su fondo apunta a "assets/patio.webp"
+   relativo a su carpeta original. Aquí se repite la regla con la ruta de la nueva estructura. */
+body::before{background:linear-gradient(180deg,#05254955,transparent 45%,#052f61aa),url("../assets/img/patio.webp") center/cover no-repeat}
 #delivery{margin-top:18px;padding:16px;border-radius:10px;background:#edf5ff;font-size:14px}
 #delivery a{color:#0754b0;font-weight:650}
 #enrollment .actions button{width:100%;justify-content:center}

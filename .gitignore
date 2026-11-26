@@ -1,4 +1,15 @@
+# Dependencias
 node_modules/
+
+# Configuración local y secretos
 .env
+
+# Datos de ejecución (sesión de WhatsApp Web) y registros
 work/
 *.log
+
+# Sistema operativo y herramientas locales
+.DS_Store
+Thumbs.db
+.impeccable/
+.claude/
