@@ -124,10 +124,10 @@ body:has(#home:not([hidden]))>footer{display:none}
 .line-matri .line-text>span{animation:home-text 700ms 560ms var(--ease-out) backwards}
 .line-year>span{animation:home-year 800ms 700ms var(--ease-out) backwards}
 .home-brand{animation:home-drop 700ms 420ms var(--ease-out) backwards}
-.home-actions h2{animation:home-up 600ms 820ms var(--ease-out) backwards}
+#home .home-actions h2{animation:home-up 600ms 820ms var(--ease-out) backwards}
 .home .choices button:first-child{animation:home-up 600ms 880ms var(--ease-out) backwards}
 .home .choices button:last-child{animation:home-up 600ms 950ms var(--ease-out) backwards}
-html.js:not(.is-ready) :is(.home-bg,.home-aura,.kid img,.line::before,.line-text>span,.line-year>span,.home-brand,.home-actions h2,.home .choices button){animation-play-state:paused}
+html.js:not(.is-ready) :is(.home-bg,.home-aura,.kid img,.line::before,.line-text>span,.line-year>span,.home-brand,#home .home-actions h2,.home .choices button){animation-play-state:paused}
 
 @keyframes home-bg{from{opacity:0;transform:scale(1.07)}}
 @keyframes home-aura{from{opacity:0;transform:scale(.82) rotate(-10deg)}}
