@@ -8,9 +8,24 @@
   <link rel="icon" href="assets/escudo.png">
   <link rel="stylesheet" href="estilos.css">
   <link rel="stylesheet" href="integraciones.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&display=swap">
+  <link rel="stylesheet" href="assets/inicio/inicio.css">
+  <link rel="preload" as="image" href="assets/inicio/alumnos-frente.webp" fetchpriority="high">
+  <link rel="preload" as="image" href="assets/inicio/alumno-fondo.webp">
+  <script src="assets/inicio/inicio.js" defer></script>
   <script src="inscripcion.js" defer></script>
 </head>
 <body>
+<div class="loader" id="loader" role="status" aria-live="polite">
+  <div class="loader-inner">
+    <img class="loader-crest" src="assets/inicio/escudo-blanco.webp" alt="" width="363" height="441">
+    <p class="loader-name">Alexander Von <b>Humboldt</b></p>
+    <div class="loader-bar" aria-hidden="true"><span id="loader-fill"></span></div>
+    <span class="sr-only">Cargando el portal de matrículas</span>
+  </div>
+</div>
 <svg class="symbols" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
   <symbol id="arrow" viewBox="0 0 24 24"><path d="M4 12h15m-6-6 6 6-6 6"/></symbol>
   <symbol id="person" viewBox="0 0 24 24"><circle cx="9" cy="7.5" r="3.5"/><path d="M2 21v-2a7 7 0 0 1 14 0v2m3-14v6m-3-3h6"/></symbol>
@@ -20,12 +35,29 @@
 </defs></svg>
 <header><div class="school"><img src="assets/escudo.png" alt=""><span>Alexander Von Humboldt</span></div><span class="portal">Portal de inscripciones</span></header>
 <main>
-  <section id="home" aria-labelledby="title">
-    <div class="hero-brand"><img class="crest" src="assets/escudo.png" alt="Escudo de Alexander Von Humboldt"><h1 id="title"><img src="assets/matriculas.png" alt="Matrículas 2027"></h1></div>
-    <h2>¿A quién vas a inscribir?</h2>
-    <div class="choices">
-      <button id="new"><svg><use href="#person"/></svg><span><strong>Alumno nuevo</strong><small>Inscripción y matrícula</small></span><svg class="arrow"><use href="#arrow"/></svg></button>
-      <button id="returning"><svg><use href="#cap"/></svg><span><strong>Alumno promovido</strong><small>Solo matrícula</small></span><svg class="arrow"><use href="#arrow"/></svg></button>
+  <section id="home" class="home" aria-labelledby="title">
+    <div class="home-bg" aria-hidden="true"></div>
+    <div class="home-stage">
+      <div class="home-scene" data-tilt="scene">
+        <img class="home-aura" data-layer="aura" src="assets/inicio/aura.webp" alt="" width="823" height="729">
+        <div class="kid kid-back" data-layer="back"><img src="assets/inicio/alumno-fondo.webp" alt="" width="799" height="1242"></div>
+        <div class="kid kid-front" data-layer="front"><img src="assets/inicio/alumnos-frente.webp" alt="Estudiantes del colegio Alexander Von Humboldt con su uniforme" width="1215" height="996" fetchpriority="high"></div>
+      </div>
+      <div class="home-headline" data-tilt="title">
+        <h1 id="title">
+          <span class="line line-portal"><span class="line-text" data-layer="text"><span>Portal de</span></span></span>
+          <span class="line line-matri"><span class="line-text" data-layer="text"><span>Matrículas</span></span></span>
+          <span class="line-year" data-layer="year"><span>2027</span></span>
+        </h1>
+      </div>
+      <div class="home-brand"><img src="assets/inicio/escudo-blanco.webp" alt="" width="363" height="441"><p>Alexander Von <b>Humboldt</b></p></div>
+      <div class="home-actions">
+        <h2>¿A quién vas a inscribir?</h2>
+        <div class="choices">
+          <button id="new"><svg><use href="#person"/></svg><span><strong>Alumno nuevo</strong><small>Inscripción y matrícula</small></span><svg class="arrow"><use href="#arrow"/></svg></button>
+          <button id="returning"><svg><use href="#cap"/></svg><span><strong>Alumno promovido</strong><small>Solo matrícula</small></span><svg class="arrow"><use href="#arrow"/></svg></button>
+        </div>
+      </div>
     </div>
   </section>
   <section id="registration" hidden aria-labelledby="form-title">

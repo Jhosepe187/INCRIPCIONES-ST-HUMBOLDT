@@ -2,6 +2,10 @@
 
 Frontend del colegio, servidor Node.js, fichas familiares PDF, consulta de DNI con ApisPerú y registro en el Google Sheet existente. `estilos.css` conserva exactamente el commit `54241f4` (FRONTED FINAL), incluidas sus animaciones; los estilos nuevos están en `integraciones.css`.
 
+## Portada
+
+La portada sigue el diseño “Portal de Matrículas 2027”: fondo del patio en azul, alumnos a la izquierda, titular con bandas amarilla y roja y los botones **Alumno nuevo** y **Alumno promovido**. Al entrar se muestra una pantalla de carga con el progreso real de imágenes y fuente; luego los elementos aparecen escalonados. Con mouse o trackpad, los alumnos y el titular se inclinan en 3D hacia el puntero. En pantallas táctiles o con “reducir movimiento” activado no hay inclinación, y con “reducir movimiento” tampoco hay animaciones. En celulares la portada se apila en vertical. Las imágenes son WebP optimizados (unos 350 KB en total) y la tipografía Poppins se carga desde Google Fonts.
+
 ## Ejecutar
 
 Requiere Node.js 22 o superior. Instalar dependencias con `pnpm install --frozen-lockfile` (o `npm install`). Copiar `.env.example` a `.env` y ejecutar `npm start`. Abrir http://localhost:3000. No abrir index.html directamente ni usar Live Server: las rutas `/api` requieren el servidor.

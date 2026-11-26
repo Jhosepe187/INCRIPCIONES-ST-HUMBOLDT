@@ -1,0 +1,166 @@
+/* Nuevo inicio: Portal de Matrículas 2027.
+   estilos.css se conserva intacto; este archivo solo sobrescribe la portada.
+   Las medidas vienen del diseño de 960×540 de "NUEVO INICIO": 1 unidad = var(--u). */
+
+:root{
+  --ease-out:cubic-bezier(.23,1,.32,1);
+  --ease-in-out:cubic-bezier(.77,0,.175,1);
+  --hum-blue:#05468f;
+  --hum-yellow:#f7bb05;
+  --hum-red:#ff3131;
+  --display:"Poppins",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+.sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
+
+/* ---------- Pantalla de carga ---------- */
+.loader{
+  position:fixed;inset:0;z-index:100;display:grid;place-items:center;color:#fff;
+  background:radial-gradient(120% 90% at 50% 42%,#0b5cc0 0%,#053f8a 45%,#012556 100%);
+  clip-path:inset(0 0 0 0);
+  /* Si el script no llega a cargar, la portada queda accesible igualmente. */
+  animation:loader-failsafe 300ms 7s ease forwards;
+}
+html.js .loader{animation:none}
+.loader-inner{display:flex;flex-direction:column;align-items:center;gap:18px;transition:opacity 240ms var(--ease-out),transform 240ms var(--ease-out)}
+.loader-crest{width:clamp(64px,9vw,92px);height:auto;animation:loader-breathe 1.8s ease-in-out infinite}
+.loader-name{margin:0;font:600 clamp(14px,1.4vw,17px)/1.15 var(--display);letter-spacing:-.01em;text-align:center;opacity:.92}
+.loader-name b{display:block;font-weight:700;font-size:1.45em}
+.loader-bar{width:clamp(140px,16vw,200px);height:3px;border-radius:3px;background:#ffffff2e;overflow:hidden}
+.loader-bar span{display:block;height:100%;background:#fff;border-radius:inherit;transform:scaleX(.04);transform-origin:left;transition:transform 380ms var(--ease-out)}
+.loader.is-leaving{clip-path:inset(0 0 100% 0);transition:clip-path 820ms 120ms var(--ease-in-out)}
+.loader.is-leaving .loader-inner{opacity:0;transform:translateY(-10px) scale(.97)}
+@keyframes loader-breathe{50%{transform:scale(.96);opacity:.86}}
+@keyframes loader-failsafe{to{opacity:0;visibility:hidden}}
+
+/* ---------- Portada ---------- */
+body:has(#home:not([hidden]))>header,
+body:has(#home:not([hidden]))>footer{display:none}
+
+#home.home{
+  position:relative;min-height:100vh;min-height:100svh;padding:0;text-align:left;overflow:hidden;
+  display:flex;flex-direction:column;justify-content:flex-end;align-items:center;isolation:isolate;
+}
+.home-bg{
+  position:absolute;inset:0;z-index:-1;
+  background:
+    linear-gradient(180deg,rgb(5 70 143 / 0) 21%,rgb(5 70 143 / .97) 100%),
+    linear-gradient(180deg,rgb(5 70 143 / .93) 0%,rgb(5 70 143 / 0) 83%),
+    url("fondo-patio.webp") center 38%/cover no-repeat,
+    var(--hum-blue);
+}
+
+.home-stage{
+  --u:calc(100cqw / 960);
+  position:relative;width:min(100vw,100svh * 16 / 9);aspect-ratio:16/9;container-type:inline-size;
+}
+
+/* Niños: capas en coordenadas del diseño */
+.home-scene{position:absolute;left:0;top:0;width:calc(480 * var(--u));height:calc(540 * var(--u));z-index:3;transform-origin:50% 100%;will-change:transform}
+.home-scene>*{position:absolute;display:block;will-change:transform}
+.home-scene img{display:block;width:100%;height:auto;user-select:none;-webkit-user-drag:none}
+.home-scene .home-aura{left:calc(1.2 * var(--u));top:0;width:calc(587.86 * var(--u));pointer-events:none}
+.kid-back{left:calc(29.91 * var(--u));top:calc(20.41 * var(--u));width:calc(307.31 * var(--u))}
+.kid-front{left:calc(13.29 * var(--u));top:calc(155.97 * var(--u));width:calc(467.31 * var(--u))}
+.kid img{filter:drop-shadow(0 calc(10 * var(--u)) calc(16 * var(--u)) rgb(0 20 60 / .3))}
+
+/* Titular */
+.home-headline{position:absolute;left:calc(223 * var(--u));top:calc(150 * var(--u));width:calc(737 * var(--u));height:calc(262 * var(--u));z-index:2;transform-origin:62% 50%;will-change:transform}
+.home-headline h1{margin:0;font-family:var(--display);font-weight:700;line-height:1;letter-spacing:-.01em;color:#fff}
+.line{position:absolute;right:0;display:flex;align-items:center;justify-content:flex-end;padding-right:calc(24 * var(--u))}
+.line::before{content:"";position:absolute;inset:0;right:calc((100cqw - 100vw) / 2 - 2px);z-index:-1}
+.line-portal{top:calc(1.6 * var(--u));left:0;height:calc(95.5 * var(--u));z-index:2}
+.line-portal::before{background:var(--hum-yellow)}
+.line-matri{top:calc(89.6 * var(--u));left:calc(242 * var(--u));height:calc(86.4 * var(--u));z-index:1}
+.line-matri::before{background:var(--hum-red);border-radius:calc(43.2 * var(--u)) 0 0 calc(43.2 * var(--u))}
+.line-text{display:block;font-size:calc(var(--fs,92) * var(--u));white-space:nowrap;will-change:transform}
+.line-text>span{display:block;text-shadow:.03em .035em 0 rgb(0 0 0 / .24)}
+.line-portal .line-text{--fs:92}
+.line-matri .line-text{--fs:77}
+.line-year{position:absolute;right:calc(20 * var(--u));top:calc(179 * var(--u));will-change:transform}
+.line-year>span{
+  display:block;font-size:calc(75 * var(--u));font-weight:600;letter-spacing:.005em;color:transparent;
+  -webkit-text-stroke:calc(2.1 * var(--u)) #fff
+}
+
+/* Marca */
+.home-brand{position:absolute;left:calc(581 * var(--u));top:calc(31 * var(--u));z-index:4;display:flex;align-items:center;gap:calc(11.5 * var(--u))}
+.home-brand img{width:calc(66.6 * var(--u));height:auto}
+.home-brand p{margin:0;font:700 calc(21.4 * var(--u))/1 var(--display);letter-spacing:-.01em;color:#fff}
+.home-brand b{display:block;font-size:1.43em;margin-top:.04em;letter-spacing:-.02em}
+
+/* Botones */
+.home-actions{position:absolute;left:calc(486 * var(--u));top:calc(412 * var(--u));width:calc(446 * var(--u));z-index:5}
+#home .home-actions h2{margin:0 0 calc(11 * var(--u));font:600 max(12px,calc(14 * var(--u)))/1.2 var(--display);letter-spacing:0;color:#fff;text-align:center}
+.home .choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:calc(16 * var(--u))}
+.home .choices button{
+  width:auto;min-height:max(44px,calc(57 * var(--u)));padding:0 calc(14 * var(--u)) 0 calc(16 * var(--u));gap:calc(9 * var(--u));
+  border-radius:999px;box-shadow:0 calc(4 * var(--u)) 0 rgb(2 30 75 / .45),0 calc(14 * var(--u)) calc(30 * var(--u)) rgb(0 20 60 / .25);
+  transition:transform 160ms var(--ease-out),background-color 160ms ease
+}
+.home .choices button>span{min-width:0;white-space:nowrap}
+.home .choices button>svg:first-child{width:calc(21 * var(--u));height:calc(21 * var(--u))}
+.home .choices strong{font:700 calc(13.2 * var(--u))/1.15 var(--display);letter-spacing:-.02em}
+.home .choices small{font-size:calc(10.4 * var(--u));margin-top:.15em}
+.home .choices .arrow{width:calc(15 * var(--u));transition:transform 200ms var(--ease-out)}
+@media(hover:hover) and (pointer:fine){.home .choices button:hover .arrow{transform:translateX(3px)}}
+
+/* Celulares en horizontal: botones compactos y legibles */
+@media (min-aspect-ratio:1/1) and (max-height:520px){
+  .home .choices button>svg:first-child,.home .choices small{display:none}
+  .home .choices strong{font-size:max(12px,calc(15 * var(--u)))}
+  .home .choices button{padding:0 calc(14 * var(--u)) 0 calc(20 * var(--u))}
+}
+
+/* ---------- Animaciones de entrada ----------
+   Quedan en pausa (en su primer fotograma) hasta que termina la carga: html.is-ready.
+   Sin JavaScript no se pausan y la portada se ve completa. */
+.home-bg{animation:home-bg 1400ms var(--ease-out) backwards}
+.home-aura{animation:home-aura 1600ms 150ms var(--ease-out) backwards}
+.kid-back img{animation:home-rise 1000ms 180ms var(--ease-out) backwards}
+.kid-front img{animation:home-rise 1000ms 300ms var(--ease-out) backwards}
+.line-portal::before{animation:home-band 760ms 260ms var(--ease-out) backwards}
+.line-matri::before{animation:home-band 760ms 360ms var(--ease-out) backwards}
+.line-portal .line-text>span{animation:home-text 700ms 480ms var(--ease-out) backwards}
+.line-matri .line-text>span{animation:home-text 700ms 560ms var(--ease-out) backwards}
+.line-year>span{animation:home-year 800ms 700ms var(--ease-out) backwards}
+.home-brand{animation:home-drop 700ms 420ms var(--ease-out) backwards}
+.home-actions h2{animation:home-up 600ms 820ms var(--ease-out) backwards}
+.home .choices button:first-child{animation:home-up 600ms 880ms var(--ease-out) backwards}
+.home .choices button:last-child{animation:home-up 600ms 950ms var(--ease-out) backwards}
+html.js:not(.is-ready) :is(.home-bg,.home-aura,.kid img,.line::before,.line-text>span,.line-year>span,.home-brand,.home-actions h2,.home .choices button){animation-play-state:paused}
+
+@keyframes home-bg{from{opacity:0;transform:scale(1.07)}}
+@keyframes home-aura{from{opacity:0;transform:scale(.82) rotate(-10deg)}}
+@keyframes home-rise{from{opacity:0;transform:translateY(9%)}}
+@keyframes home-band{from{clip-path:inset(0 0 0 100%)}to{clip-path:inset(0 0 0 0)}}
+@keyframes home-text{from{opacity:0;transform:translateY(.28em);filter:blur(4px)}}
+@keyframes home-year{from{opacity:0;transform:translateY(.22em);filter:blur(6px)}}
+@keyframes home-drop{from{opacity:0;transform:translateY(-14px)}}
+@keyframes home-up{from{opacity:0;transform:translateY(14px)}}
+
+/* ---------- Pantallas verticales (celulares y tabletas) ---------- */
+@media (max-aspect-ratio:1/1){
+  #home.home{justify-content:stretch}
+  .home-stage{width:100vw;aspect-ratio:auto;height:100svh;min-height:560px}
+  .home-brand{--u:calc(100cqw / 480);left:0;right:0;top:max(22px,env(safe-area-inset-top));justify-content:center}
+  .home-headline{
+    --u:calc(100cqw / 700);left:calc(-37 * var(--u));right:0;width:auto;
+    top:calc(max(22px,env(safe-area-inset-top)) + 100cqw * 82 / 480 + 3svh)
+  }
+  .home-scene{--u:calc(min(64svh,136cqw) / 540);top:auto;bottom:0;left:calc(50% - 250 * var(--u))}
+  .home-actions{
+    --u:calc(100cqw / 480);left:0;right:0;top:auto;bottom:0;width:auto;
+    padding:72px 20px max(20px,env(safe-area-inset-bottom));
+    background:linear-gradient(180deg,rgb(3 45 105 / 0) 0%,rgb(3 45 105 / .82) 42%,rgb(3 40 95 / .96) 100%)
+  }
+  .home .choices{grid-template-columns:1fr;gap:10px;max-width:420px;margin:0 auto}
+  #home .home-actions h2{font-size:15px;margin-bottom:12px}
+  .home .choices button{min-height:58px;padding:0 18px;gap:14px}
+  .home .choices strong{font-size:17px}
+  .home .choices small{font-size:13px}
+  .home .choices button>svg:first-child{width:24px;height:24px}
+}
+@media (max-aspect-ratio:1/1) and (min-width:700px){
+  .home-headline{--u:calc(100cqw / 860);left:calc(-40 * var(--u))}
+  .home .choices{grid-template-columns:1fr 1fr;max-width:640px}
+}
