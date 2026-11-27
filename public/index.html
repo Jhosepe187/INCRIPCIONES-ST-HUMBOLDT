@@ -32,6 +32,7 @@
   <symbol id="cap" viewBox="0 0 24 24"><path d="m2 8 10-5 10 5-10 5zm4 3v5q6 5 12 0v-5m4-3v8"/></symbol>
   <symbol id="pin" viewBox="0 0 24 24"><path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z"/><circle cx="12" cy="10" r="2"/></symbol>
   <symbol id="sheet" viewBox="0 0 24 24"><path d="M5 2h10l4 4v16H5zM14 2v5h5M8 11h8v7H8zm0 3.5h8M12 11v7"/></symbol>
+  <symbol id="chat" viewBox="0 0 24 24"><path d="M21 11.5a8.5 8.5 0 0 1-12.6 7.4L3 20.5l1.6-5.2A8.5 8.5 0 1 1 21 11.5Z"/><path d="M8.5 11.5h7M8.5 8.5h4"/></symbol>
 </defs></svg>
 <header><div class="school"><img src="assets/img/escudo.png" alt=""><span>Alexander Von Humboldt</span></div><span class="portal">Portal de inscripciones</span></header>
 <main>
@@ -63,11 +64,11 @@
   <section id="registration" hidden aria-labelledby="form-title">
     <div class="form-top"><button type="button" id="back">← Volver al inicio</button><img src="assets/img/matriculas.png" alt="Matrículas 2027"></div>
     <form id="enrollment" novalidate>
-      <div class="intro"><p id="payment"></p><h1 id="form-title" tabindex="-1"></h1><p>Completa los datos del estudiante y de la persona de contacto.</p></div>
+      <div class="intro"><p id="payment"></p><h1 id="form-title" tabindex="-1"></h1><p>Completa los datos del estudiante, de la madre y del padre.</p></div>
       <div id="students"></div>
-      <section class="section" aria-label="Contacto de matrícula">
+      <section class="section" aria-label="Datos de la madre y del padre">
         <div id="primary"></div>
-        <label class="check"><input type="checkbox" id="additional"> Agregar otro contacto familiar</label><div id="secondary" hidden></div>
+        <div id="secondary"></div>
         <div class="grid"><label>Correo electrónico<input name="correo" type="email" required autocomplete="email"></label><label>Ocupación (opcional)<input name="ocupacion"></label><label id="address-field" class="wide" hidden>Dirección actual<input name="direccion" autocomplete="street-address" disabled maxlength="200"><small>Ingresa la dirección actual del domicilio para completar la ficha.</small></label></div>
       </section>
       <div class="consent"><label class="check"><input type="checkbox" name="consentimiento" required><span>He leído y autorizo el tratamiento de mis datos personales y los de los estudiantes, conforme a la <button type="button" class="link" data-open="privacy">Ley N.° 29733, Ley de Protección de Datos Personales</button>.</span></label></div>
@@ -118,11 +119,20 @@
   </div>
   <button class="continue">Entendido</button>
 </form></dialog>
+<dialog id="whatsapp" aria-labelledby="whatsapp-title" aria-describedby="whatsapp-help"><form method="dialog">
+  <button class="close" aria-label="Cerrar">×</button><div class="dialog-icon"><svg><use href="#chat"/></svg></div><p class="route">Matrícula guardada</p>
+  <h2 id="whatsapp-title">Envía la ficha por WhatsApp</h2>
+  <p id="whatsapp-help"></p>
+  <p class="whatsapp-file"><svg><use href="#sheet"/></svg><span id="whatsapp-file"></span></p>
+  <a id="whatsapp-open" class="continue whatsapp-send" target="_blank" rel="noopener">Enviar a WhatsApp <svg><use href="#arrow"/></svg></a>
+  <button id="whatsapp-share" class="continue whatsapp-send" type="button" hidden>Enviar a WhatsApp <svg><use href="#arrow"/></svg></button>
+  <p class="whatsapp-again"><a id="whatsapp-download">Descargar la ficha de nuevo</a></p>
+</form></dialog>
 <template id="student-template"><fieldset class="section"><legend></legend><div class="grid">
 <label class="wide">Apellidos y nombres<input data-key="nombre" required></label><label>DNI<input data-key="dni" inputmode="numeric" pattern="[0-9]{8}" maxlength="8" title="Ingresa los 8 dígitos del DNI" required></label>
 <label>Nivel<select data-key="nivel" required><option value="">Selecciona el nivel</option><option>Primaria</option><option>Secundaria</option></select></label><label>Grado al que ingresa<select data-key="grado" required disabled><option value="">Primero elige el nivel</option></select></label>
 <label class="wide">Colegio de procedencia (opcional)<input data-key="procedencia" maxlength="160"></label>
 </div></fieldset></template>
-<template id="contact-template"><div class="contact"><div class="contact-roles" role="group" aria-label="Parentesco"><button type="button" data-role="Madre" aria-pressed="true">Madre</button><button type="button" data-role="Padre" aria-pressed="false">Padre</button><button type="button" data-role="Apoderado/a" aria-pressed="false">Apoderado/a</button></div><input type="hidden" data-key="parentesco" value="Madre"><div class="grid"><label>DNI<input data-key="dni" inputmode="numeric" maxlength="8" pattern="[0-9]{8}" title="Ingresa los 8 dígitos del DNI" required autocomplete="off"></label><label>Celular<input data-key="celular" type="tel" inputmode="tel" pattern="[0-9]{9}" maxlength="9" title="Ingresa los 9 dígitos del celular" required></label><p class="lookup-status" role="status">Los nombres se completarán al ingresar los 8 dígitos del DNI.</p><output class="lookup-name" hidden></output><details class="manual-contact" hidden><summary>Completar nombres manualmente</summary><label>Apellidos y nombres<input data-key="nombre" maxlength="140"></label></details></div></div></template>
+<template id="contact-template"><fieldset class="contact"><legend></legend><input type="hidden" data-key="parentesco"><div class="grid"><label>DNI<input data-key="dni" inputmode="numeric" maxlength="8" pattern="[0-9]{8}" title="Ingresa los 8 dígitos del DNI" required autocomplete="off"></label><label>Celular<input data-key="celular" type="tel" inputmode="tel" pattern="[0-9]{9}" maxlength="9" title="Ingresa los 9 dígitos del celular" required></label><p class="lookup-status" role="status">Los nombres se completarán al ingresar los 8 dígitos del DNI.</p><output class="lookup-name" hidden></output><details class="manual-contact" hidden><summary>Completar nombres manualmente</summary><label>Apellidos y nombres<input data-key="nombre" maxlength="140"></label></details></div></fieldset></template>
 </body>
 </html>

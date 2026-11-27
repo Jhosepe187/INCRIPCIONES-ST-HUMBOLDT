@@ -4,9 +4,9 @@ body::before{background:linear-gradient(180deg,#05254955,transparent 45%,#052f61
 #delivery{margin-top:18px;padding:16px;border-radius:10px;background:#edf5ff;font-size:14px}
 #delivery a{color:#0754b0;font-weight:650}
 #enrollment .actions button{width:100%;justify-content:center}
-.contact-roles{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 14px}
-.contact-roles button{padding:8px 14px;border-radius:20px;color:var(--ink);background:#edf3f8}
-.contact-roles button[aria-pressed=true]{color:#fff;background:var(--blue)}
+.contact{margin:0 0 20px;padding:20px 20px 22px;border:1px solid #dbe5ee;border-left:4px solid #006b4a;border-radius:14px;background:#fbfdff;min-inline-size:0}
+.contact legend{float:left;width:100%;margin:0 0 14px;padding:0;font-size:18px;font-weight:730;color:#006b4a;letter-spacing:-.02em}
+.contact .grid{clear:both}
 .lookup-status{grid-column:1/-1;margin:0!important;font-size:14px}
 .manual-contact{grid-column:1/-1}
 .manual-contact summary{cursor:pointer;color:#0754b0;font-size:14px;margin-bottom:12px}
@@ -28,10 +28,8 @@ body::before{background:linear-gradient(180deg,#05254955,transparent 45%,#052f61
 #students .section .grid{clear:both}
 #students input:not(:focus),#students select:not(:disabled):not(:focus){background:#fff}
 
-/* 3. Botones Madre / Padre / Apoderado/a */
-.contact-roles button{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:10px 18px;font-weight:600}
-.contact-roles button[aria-pressed=true]{box-shadow:0 3px 0 #08336a}
-.contact-roles button[aria-pressed=true]::before{content:"✓";font-weight:800}
+/* 3. Datos de la madre y del padre: ver .contact al inicio */
+.contact input:not(:focus){background:#fff}
 
 /* 4. Línea dorada bajo el título y botón de envío */
 .intro h1::after{content:"";display:block;width:56px;height:4px;margin-top:14px;border-radius:2px;background:#f7ba22}
@@ -79,9 +77,6 @@ header,footer{animation:fade 600ms ease backwards}
 #enrollment label{transition:color 180ms ease}
 #enrollment label:focus-within{color:var(--blue)}
 
-/* Selección de parentesco */
-.contact-roles button{transition:transform 160ms var(--ease),background-color 220ms ease,color 220ms ease,box-shadow 220ms ease}
-.contact-roles button[aria-pressed=true]::before{display:inline-block;animation:pop 360ms var(--ease) backwards}
 
 /* Contenidos que aparecen al responder */
 #secondary:not([hidden]),#address-field:not([hidden]),.lookup-name:not([hidden]),.manual-contact:not([hidden]),#delivery:not([hidden]){animation:reveal 360ms var(--ease) backwards}
@@ -114,3 +109,18 @@ footer .legal-links{gap:16px}
 footer .link{color:#fff;font-weight:500;font-size:inherit;opacity:.85}
 @media(hover:hover) and (pointer:fine){footer .link:hover{opacity:1;color:#fff}}
 @media(max-width:620px){footer{flex-wrap:wrap;justify-content:center;padding:10px 0;text-align:center}}
+
+/* ---- Cuadro flotante: envío de la ficha por WhatsApp ---- */
+#whatsapp .dialog-icon{background:#e3f6ea;color:#0b6b35}
+#whatsapp .route{color:#0b6b35}
+#whatsapp-help{margin:10px 0 0;font-size:16px}
+#whatsapp-help b{color:var(--ink)}
+.whatsapp-file{display:flex;align-items:center;gap:10px;margin:16px 0 20px;padding:12px 14px;border-radius:12px;background:#f3f8ff;border:1px solid #dbe5ee;color:var(--ink)!important;font-size:14px;font-weight:600;overflow-wrap:anywhere}
+.whatsapp-file svg{flex:none;width:20px;height:20px;color:var(--blue)}
+.whatsapp-send{background:#0b6b35;text-decoration:none}
+.whatsapp-send[hidden]{display:none}
+@media(hover:hover) and (pointer:fine){.whatsapp-send:hover{background:#085a2c}}
+.whatsapp-send:focus-visible{outline:3px solid #f7ba22;outline-offset:3px}
+.whatsapp-again{margin:14px 0 0;text-align:center;font-size:14px}
+.whatsapp-again a{color:#0754b0;font-weight:650}
+dialog[open] .whatsapp-file{animation:rise 420ms 160ms var(--ease) backwards}

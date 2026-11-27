@@ -12,7 +12,7 @@ export function validate(input) {
   };
   if (!input || !['nuevo', 'promovido'].includes(input.tipo)) fail('Selecciona el tipo de matrícula.');
   if (!Array.isArray(input.estudiantes) || input.estudiantes.length < 1 || input.estudiantes.length > 50) fail('Ingresa entre 1 y 50 estudiantes.');
-  if (!Array.isArray(input.contactos) || input.contactos.length < 1 || input.contactos.length > 2) fail('Ingresa uno o dos contactos.');
+  if (!Array.isArray(input.contactos) || input.contactos.length !== 2) fail('Ingresa los datos de la madre y del padre.');
   const estudiantes = input.estudiantes.map(s => {
     const nivel = str(s.nivel, 'el nivel');
     const grado = str(s.grado, 'el grado');
@@ -22,11 +22,13 @@ export function validate(input) {
   });
   if (new Set(estudiantes.map(s => s.dni)).size !== estudiantes.length) fail('Hay estudiantes con el mismo DNI en este formulario.');
   const contactos = input.contactos.map(c => {
-    if (!['Madre', 'Padre', 'Apoderado/a'].includes(c.parentesco)) fail('Selecciona el parentesco del contacto.');
+    if (!['Madre', 'Padre'].includes(c?.parentesco)) fail('Ingresa los datos de la madre y del padre.');
     return {parentesco:c.parentesco, nombre:str(c.nombre, 'el nombre del contacto', 140), dni:digits(c.dni, 'el DNI del contacto', 8), celular:digits(c.celular, 'el celular', 9)};
   });
   const correo = str(input.correo, 'el correo', 200);
-  if(contactos.length===2 && contactos[0].parentesco===contactos[1].parentesco && contactos[0].parentesco!=='Apoderado/a') fail('Selecciona un parentesco diferente para el segundo contacto.');
+  // La madre y el padre son obligatorios: uno de cada uno y con DNI distintos.
+  if (contactos[0].parentesco === contactos[1].parentesco) fail('Ingresa los datos de la madre y del padre.');
+  if (contactos[0].dni === contactos[1].dni) fail('La madre y el padre no pueden tener el mismo DNI.');
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) fail('Ingresa un correo válido.');
   return {tipo:input.tipo, estudiantes, contactos, correo, direccion:str(input.direccion, 'la dirección', 200), ocupacion:str(input.ocupacion, 'la ocupación', 160, true)};
 }

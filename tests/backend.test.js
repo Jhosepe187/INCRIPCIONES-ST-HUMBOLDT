@@ -7,12 +7,23 @@ import {lookupDni,normalizePerson} from '../backend/dni.js';
 import {execFileSync} from 'node:child_process';
 import {readFileSync} from 'node:fs';
 
-export const sample={tipo:'nuevo',estudiantes:[{nombre:'ESTUDIANTE DE PRUEBA',dni:'00123456',grado:'1.º',nivel:'Primaria',procedencia:'Colegio de prueba'}],contactos:[{parentesco:'Madre',nombre:'CONTACTO DE PRUEBA',dni:'00012345',celular:'900000000'}],correo:'prueba@example.com',direccion:'Dirección de prueba',ocupacion:'Docente'};
+export const sample={tipo:'nuevo',estudiantes:[{nombre:'ESTUDIANTE DE PRUEBA',dni:'00123456',grado:'1.º',nivel:'Primaria',procedencia:'Colegio de prueba'}],contactos:[{parentesco:'Madre',nombre:'MADRE DE PRUEBA',dni:'00012345',celular:'900000000'},{parentesco:'Padre',nombre:'PADRE DE PRUEBA',dni:'00054321',celular:'911111111'}],correo:'prueba@example.com',direccion:'Dirección de prueba',ocupacion:'Docente'};
 test('validación conserva ceros y rechaza grados, DNI duplicados y parentescos inválidos',()=>{
   assert.equal(validate(sample).estudiantes[0].dni,'00123456');
   assert.throws(()=>validate({...sample,estudiantes:[{...sample.estudiantes[0],nivel:'Secundaria',grado:'6.º'}]}));
   assert.throws(()=>validate({...sample,estudiantes:[...sample.estudiantes,...sample.estudiantes]}));
-  assert.throws(()=>validate({...sample,contactos:[{...sample.contactos[0],parentesco:'otro'}]}));
+  assert.throws(()=>validate({...sample,contactos:[{...sample.contactos[0],parentesco:'otro'},sample.contactos[1]]}));
+});
+test('validación: los datos de la madre y del padre son obligatorios',()=>{
+  const [madre,padre]=sample.contactos;
+  assert.deepEqual(validate(sample).contactos.map(c=>c.parentesco),['Madre','Padre']);
+  assert.throws(()=>validate({...sample,contactos:[madre]}),/madre y del padre/);
+  assert.throws(()=>validate({...sample,contactos:[padre]}),/madre y del padre/);
+  assert.throws(()=>validate({...sample,contactos:[madre,{...padre,parentesco:'Madre'}]}),/madre y del padre/);
+  assert.throws(()=>validate({...sample,contactos:[madre,{...padre,parentesco:'Apoderado/a'}]}),/madre y del padre/);
+  assert.throws(()=>validate({...sample,contactos:[madre,{...padre,dni:madre.dni}]}),/mismo DNI/);
+  assert.throws(()=>validate({...sample,contactos:[madre,{...padre,celular:''}]}),/celular/);
+  assert.throws(()=>validate({...sample,contactos:[madre,padre,{...padre,dni:'00099999'}]}),/madre y del padre/);
 });
 test('fichas de 1, 2 y 3 hermanos: una página familiar y tarifas de las referencias',async()=>{
   for(const total of [1,2,3,4]) {

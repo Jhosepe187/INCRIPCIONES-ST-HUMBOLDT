@@ -32,9 +32,9 @@ Familia ──► matricula.<dominio>  ──CNAME──►  Vercel
 En `https://<proyecto>.vercel.app`:
 
 - [ ] La portada carga con imágenes y tipografía.
-- [ ] Al escribir un DNI de contacto se completan los nombres (ApisPerú).
+- [ ] Al escribir el DNI de la madre y el del padre se completan sus nombres (ApisPerú).
 - [ ] Una matrícula de prueba aparece en el Google Sheet y se entrega la ficha PDF con el escudo.
-- [ ] En computadora: se descarga la ficha y **Abrir WhatsApp** abre el chat del colegio.
+- [ ] En computadora: se descarga la ficha, aparece el cuadro flotante y **Enviar a WhatsApp** abre el chat del colegio.
 - [ ] En celular: **Compartir** ofrece WhatsApp con el PDF adjunto.
 - [ ] `https://<proyecto>.vercel.app/backend/server.js` y `/.env` responden **404** (solo se publica `public/`).
 
