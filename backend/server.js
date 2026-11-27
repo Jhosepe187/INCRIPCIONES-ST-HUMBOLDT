@@ -10,6 +10,8 @@ import {lookupDni} from './dni.js';
 export function createApp({save=saveToSheets,lookup=lookupDni}={}) {
   const app=express();
   app.disable('x-powered-by');
+  // En Vercel la app corre detrás de su proxy: así req.protocol, req.ip y la comprobación de origen usan los datos reales del visitante.
+  if (process.env.VERCEL) app.set('trust proxy', 1);
   app.use(helmet({contentSecurityPolicy:{directives:{'upgrade-insecure-requests':null}}, strictTransportSecurity:process.env.NODE_ENV==='production'?undefined:false}));
   app.use(express.json({limit:'128kb'}));
   app.use('/api',rateLimit({windowMs:60000,limit:30,standardHeaders:'draft-8',legacyHeaders:false}));

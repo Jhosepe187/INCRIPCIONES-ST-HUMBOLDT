@@ -71,3 +71,13 @@ test('API: registro confirmado, error real de Google, validación y rutas privad
   assert.equal(failedPdf.status, 502);
   assert.match(failedPdf.headers.get('content-type'), /application\/json/);
 });
+test('Vercel: api/index.js publica la app y acepta el origen HTTPS detrás del proxy',async t=>{
+  // Vercel termina HTTPS en su proxy y la función recibe HTTP con X-Forwarded-Proto: https.
+  const start=async app=>{const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));t.after(()=>server.close());return `127.0.0.1:${server.address().port}`;};
+  const call=(host,extra={})=>fetch(`http://${host}/api/dni`,{method:'POST',headers:{'Content-Type':'application/json',Origin:`https://${host}`,'X-Forwarded-Proto':'https',...extra},body:JSON.stringify({dni:'123'})});
+  process.env.VERCEL='1';
+  let vercelApp;
+  try { vercelApp=(await import('../api/index.js')).default; } finally { delete process.env.VERCEL; }
+  assert.equal((await call(await start(vercelApp),{'X-Forwarded-For':'203.0.113.7'})).status,400,'llega a la validación: el origen HTTPS se reconoce');
+  assert.equal((await call(await start(createApp()))).status,403,'fuera de Vercel no se confía en X-Forwarded-Proto');
+});
