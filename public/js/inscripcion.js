@@ -96,7 +96,31 @@ function toggleContact() {
 $('#additional').onchange = toggleContact;
 toggleContact();
 
-// Consultas desde el servidor: el token de ApisPerú nunca llega al navegador.
+// Términos y condiciones: se muestran al terminar la pantalla de carga y no se cierran sin aceptar.
+const terms = $('#terms');
+const termsAccept = $('#terms-accept');
+function termsAccepted() {
+  try { return sessionStorage.getItem('terminos-aceptados') === '1'; } catch { return false; }
+}
+function showTerms() {
+  if (!termsAccepted() && !terms.open) terms.showModal();
+}
+termsAccept.onchange = () => { $('#terms-continue').disabled = !termsAccept.checked; };
+terms.addEventListener('cancel', event => { if (!termsAccepted()) event.preventDefault(); });
+$('#terms-form').onsubmit = () => {
+  try { sessionStorage.setItem('terminos-aceptados', '1'); } catch { /* sin almacenamiento: se acepta solo en esta vista */ }
+};
+document.addEventListener('portal:listo', showTerms);
+if (!$('#loader')) showTerms();
+document.querySelectorAll('[data-open]').forEach(button => {
+  button.onclick = () => {
+    const dialog = document.getElementById(button.dataset.open);
+    if (dialog === terms) { termsAccept.checked = true; $('#terms-continue').disabled = false; }
+    if (!dialog.open) dialog.showModal();
+  };
+});
+
+// Consultas desde el servidor: el token del servicio de DNI nunca llega al navegador.
 const dniCache = new Map();
 const lookupTasks = new Map();
 function showAddress() {
@@ -128,7 +152,7 @@ function setupContact(group, initialRole) {
         name.value=person.nombre;
         output.textContent=person.nombre;output.hidden=false;
         manual.hidden=true;manual.open=false;name.required=false;
-        status.textContent='Nombres completados con ApisPerú.';
+        status.textContent='Nombres completados.';
         if(person.direccion && !$('#enrollment').elements.direccion.value)$('#enrollment').elements.direccion.value=person.direccion;
         showAddress();
       }catch(error){
@@ -184,7 +208,9 @@ function validateForm() {
   if (form.reportValidity()) return true;
   const field = form.querySelector('input:invalid, select:invalid');
   const label = field?.labels?.[0]?.firstChild?.textContent.trim();
-  $('#status').textContent = label
+  $('#status').textContent = field?.name === 'consentimiento'
+    ? 'Marca la autorización de tratamiento de datos personales (Ley N.° 29733) para enviar la matrícula.'
+    : label
     ? `Revisa el campo «${label}». ${field.validationMessage}`
     : 'Revisa los campos obligatorios del formulario.';
   return false;

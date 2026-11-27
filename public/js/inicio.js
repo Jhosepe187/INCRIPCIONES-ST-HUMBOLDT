@@ -45,6 +45,7 @@
   function reveal() {
     root.classList.add('is-ready');
     if (main) main.inert = false;
+    document.dispatchEvent(new Event('portal:listo')); // inscripcion.js muestra los términos
     if (!loader) return;
     if (reduceMotion) { loader.remove(); return; }
     loader.classList.add('is-leaving');

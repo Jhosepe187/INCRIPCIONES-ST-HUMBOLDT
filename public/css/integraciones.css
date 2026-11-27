@@ -96,3 +96,21 @@ header,footer{animation:fade 600ms ease backwards}
 dialog[open] .dialog-icon{animation:pop 420ms 80ms var(--ease) backwards}
 dialog[open] h2,dialog[open] .route{animation:rise 420ms 120ms var(--ease) backwards}
 dialog[open] .stepper,dialog[open] .continue{animation:rise 420ms 190ms var(--ease) backwards}
+
+/* ---- Términos y condiciones / Ley N.° 29733 ---- */
+dialog.legal{max-width:min(600px,calc(100% - 32px))}
+.legal-text{max-height:min(46vh,420px);overflow:auto;margin:12px 0 6px;padding:4px 14px 4px 2px;font-size:14.5px;line-height:1.55;color:#425873;overscroll-behavior:contain}
+.legal-text p{margin:0 0 10px}.legal-text ol{margin:0;padding-left:20px}.legal-text li{margin-bottom:9px}
+.legal-text b{color:var(--ink)}
+.legal-text:focus-visible{outline:3px solid #f7ba22;outline-offset:2px;border-radius:6px}
+dialog.legal .check{font-size:15px}
+.continue:disabled{opacity:.45;cursor:not-allowed}
+.link{background:none;padding:0;font:inherit;font-weight:650;color:var(--blue);text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+@media(hover:hover) and (pointer:fine){.link:not(:disabled):hover{transform:none;color:#07396e}}
+.consent{margin:0 0 18px;padding:14px 16px;border-radius:12px;background:#f3f8ff;border:1px solid #dbe5ee}
+.consent .check{align-items:flex-start;margin:0;font-weight:500;font-size:14.5px;line-height:1.5}
+.consent .check input{margin-top:2px;flex:none}
+footer .legal-links{gap:16px}
+footer .link{color:#fff;font-weight:500;font-size:inherit;opacity:.85}
+@media(hover:hover) and (pointer:fine){footer .link:hover{opacity:1;color:#fff}}
+@media(max-width:620px){footer{flex-wrap:wrap;justify-content:center;padding:10px 0;text-align:center}}

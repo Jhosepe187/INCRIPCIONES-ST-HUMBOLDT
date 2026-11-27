@@ -11,7 +11,7 @@ export async function lookupDni(dni,{token=process.env.APISPERU_TOKEN,fetcher=fe
   if(!token){const e=new Error('La consulta de DNI no está configurada. Puedes completar los datos manualmente.');e.status=503;throw e;}
   try{
     const response=await fetcher(`https://dniruc.apisperu.com/api/v1/dni/${dni}`,{headers:{Authorization:`Bearer ${token}`,Accept:'application/json'},signal:AbortSignal.timeout(12000)});
-    if(!response.ok){const e=new Error(response.status===429?'Se alcanzó el límite de consultas de DNI. Completa los datos manualmente.':'ApisPerú no pudo consultar ese DNI. Revisa el número o completa los datos manualmente.');e.status=response.status===404?404:502;throw e;}
+    if(!response.ok){const e=new Error(response.status===429?'Se alcanzó el límite de consultas de DNI. Completa los datos manualmente.':'No se pudo consultar ese DNI. Revisa el número o completa los datos manualmente.');e.status=response.status===404?404:502;throw e;}
     return normalizePerson(await response.json(),dni);
   }catch(error){if(error.status)throw error;const e=new Error('La consulta de DNI no está disponible en este momento. Puedes completar los datos manualmente.');e.status=502;throw e;}
 }

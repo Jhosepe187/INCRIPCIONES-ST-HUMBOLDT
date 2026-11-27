@@ -68,8 +68,9 @@
       <section class="section" aria-label="Contacto de matrícula">
         <div id="primary"></div>
         <label class="check"><input type="checkbox" id="additional"> Agregar otro contacto familiar</label><div id="secondary" hidden></div>
-        <div class="grid"><label>Correo electrónico<input name="correo" type="email" required autocomplete="email"></label><label>Ocupación (opcional)<input name="ocupacion"></label><label id="address-field" class="wide" hidden>Dirección actual<input name="direccion" autocomplete="street-address" disabled maxlength="200"><small>La consulta DNI de ApisPerú no incluye dirección. Ingresa la dirección actual para completar la ficha.</small></label></div>
+        <div class="grid"><label>Correo electrónico<input name="correo" type="email" required autocomplete="email"></label><label>Ocupación (opcional)<input name="ocupacion"></label><label id="address-field" class="wide" hidden>Dirección actual<input name="direccion" autocomplete="street-address" disabled maxlength="200"><small>Ingresa la dirección actual del domicilio para completar la ficha.</small></label></div>
       </section>
+      <div class="consent"><label class="check"><input type="checkbox" name="consentimiento" required><span>He leído y autorizo el tratamiento de mis datos personales y los de los estudiantes, conforme a la <button type="button" class="link" data-open="privacy">Ley N.° 29733, Ley de Protección de Datos Personales</button>.</span></label></div>
       <div class="action-area"><p>Envía la matrícula para registrarla en el colegio y compartir la ficha PDF por WhatsApp.</p><div class="actions">
         <button class="sheets raised" type="submit"><svg><use href="#sheet"/></svg><span id="submit-label">Enviar matrícula</span></button>
       </div><p id="status" role="status"></p></div>
@@ -77,12 +78,45 @@
     </form>
   </section>
 </main>
-<footer><span>Matrículas escolares 2027</span><span><svg><use href="#pin"/></svg>Cajamarca, Perú</span></footer>
+<footer><span>Matrículas escolares 2027</span><span class="legal-links"><button type="button" class="link" data-open="terms">Términos y condiciones</button><button type="button" class="link" data-open="privacy">Protección de datos</button></span><span><svg><use href="#pin"/></svg>Cajamarca, Perú</span></footer>
 <dialog id="quantity" aria-labelledby="count-title"><form id="quantity-form">
   <button type="button" class="close" aria-label="Cerrar">×</button><div class="dialog-icon"><svg><use href="#person"/></svg></div><p class="route">Alumno nuevo</p>
   <h2 id="count-title">¿Cuántos alumnos vas a inscribir?</h2><p>Cuenta al primer alumno y a sus hermanos. Si inscribes a uno solo, elige 1.</p>
   <label for="count">Cantidad de alumnos</label><div class="stepper"><button id="less" type="button" aria-label="Restar un alumno">−</button><input id="count" type="number" min="1" max="50" step="1" value="1" required inputmode="numeric"><button id="more" type="button" aria-label="Sumar un alumno">+</button></div>
   <button class="continue">Continuar al formulario <svg><use href="#arrow"/></svg></button>
+</form></dialog>
+<dialog id="terms" class="legal" aria-labelledby="terms-title"><form id="terms-form" method="dialog">
+  <div class="dialog-icon"><svg><use href="#sheet"/></svg></div><p class="route">Antes de empezar</p>
+  <h2 id="terms-title">Términos y condiciones</h2>
+  <div class="legal-text" tabindex="0">
+    <p>Este portal permite a madres, padres y apoderados registrar la inscripción y matrícula 2027 en el colegio Alexander Von Humboldt (Cajamarca, Perú). Al usarlo aceptas lo siguiente:</p>
+    <ol>
+      <li><b>Veracidad.</b> Declaras ser madre, padre o apoderado/a del estudiante, o contar con su autorización, y que los datos ingresados son verdaderos y completos.</li>
+      <li><b>El registro no garantiza la vacante.</b> El envío registra tu solicitud. La vacante y la matrícula se confirman por los canales oficiales del colegio.</li>
+      <li><b>Montos referenciales.</b> Los importes de la ficha PDF son referenciales y no son un comprobante de pago. Confírmalos con el colegio antes de pagar.</li>
+      <li><b>Envío por WhatsApp.</b> El portal deja la ficha lista en el chat del colegio. El mensaje solo se envía cuando tú pulsas «Enviar» en WhatsApp.</li>
+      <li><b>Datos personales.</b> Tus datos y los de los estudiantes se tratan según la <button type="button" class="link" data-open="privacy">Ley N.° 29733, Ley de Protección de Datos Personales</button>. En el formulario se te pedirá tu autorización expresa.</li>
+      <li><b>Uso adecuado.</b> No ingreses datos de otras personas sin su autorización ni intentes alterar el funcionamiento del portal.</li>
+      <li><b>Cambios.</b> El colegio puede actualizar estos términos. La versión vigente es siempre la publicada en este portal.</li>
+    </ol>
+  </div>
+  <label class="check"><input type="checkbox" id="terms-accept"> He leído y acepto los términos y condiciones</label>
+  <button class="continue" id="terms-continue" disabled>Aceptar y continuar <svg><use href="#arrow"/></svg></button>
+</form></dialog>
+<dialog id="privacy" class="legal" aria-labelledby="privacy-title"><form method="dialog">
+  <button class="close" aria-label="Cerrar">×</button><p class="route">Ley N.° 29733</p>
+  <h2 id="privacy-title">Protección de datos personales</h2>
+  <div class="legal-text" tabindex="0">
+    <p><b>Responsable.</b> Colegio Alexander Von Humboldt, Cajamarca, Perú.</p>
+    <p><b>Datos que recopilamos.</b> De los estudiantes: apellidos y nombres, DNI, nivel, grado y colegio de procedencia. De los contactos: apellidos y nombres, DNI, parentesco, celular, correo electrónico, dirección y ocupación.</p>
+    <p><b>Finalidad.</b> Gestionar la inscripción y matrícula 2027, generar la ficha familiar y comunicarnos con la familia sobre este proceso. No usamos los datos con fines publicitarios ni los vendemos.</p>
+    <p><b>Menores de edad.</b> Los datos de los estudiantes los proporciona y autoriza su madre, padre o apoderado/a.</p>
+    <p><b>Con quién se comparten.</b> Los registros se guardan en Google Sheets (Google), cuyos servidores pueden estar fuera del Perú. Para completar los nombres, el número de DNI se consulta a un proveedor de datos de identidad. La ficha llega a WhatsApp solo si tú la envías. El acceso queda restringido al personal autorizado del colegio.</p>
+    <p><b>Conservación.</b> Los datos se conservan mientras dure el proceso y la relación educativa, y luego por los plazos que exige la ley.</p>
+    <p><b>Tus derechos.</b> Puedes solicitar acceso, rectificación, cancelación u oposición al tratamiento de tus datos (derechos ARCO), y revocar tu autorización, escribiendo al WhatsApp del colegio +51 901 648 212 o en la secretaría. Si tu solicitud no es atendida, puedes reclamar ante la Autoridad Nacional de Protección de Datos Personales del Ministerio de Justicia y Derechos Humanos.</p>
+    <p><b>Autorización.</b> Al marcar la casilla del formulario autorizas este tratamiento de forma libre, previa, expresa e informada, según la Ley N.° 29733 y su Reglamento. Sin esta autorización no podemos procesar la matrícula en línea, pero puedes realizarla en la secretaría del colegio.</p>
+  </div>
+  <button class="continue">Entendido</button>
 </form></dialog>
 <template id="student-template"><fieldset class="section"><legend></legend><div class="grid">
 <label class="wide">Apellidos y nombres<input data-key="nombre" required></label><label>DNI<input data-key="dni" inputmode="numeric" pattern="[0-9]{8}" maxlength="8" title="Ingresa los 8 dígitos del DNI" required></label>

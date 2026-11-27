@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {JSDOM} from 'jsdom';
 
-function setup({saveSucceeds = true, attachSucceeds = true, url = 'http://localhost:3000', mobileShare = false, shareNeedsTap = false, beforeSave, beforeAttach} = {}){
+function setup({saveSucceeds = true, attachSucceeds = true, url = 'http://localhost:3000', mobileShare = false, shareNeedsTap = false, beforeSave, beforeAttach, consent = true} = {}){
   const dom=new JSDOM(readFileSync(new URL('../public/index.html',import.meta.url),'utf8'),{url,runScripts:'outside-only'});
   const {window}=dom,doc=window.document;
   window.scrollTo=()=>{};
@@ -56,6 +56,7 @@ function setup({saveSucceeds = true, attachSucceeds = true, url = 'http://localh
   }
   fill('#primary [data-key=dni]','00012345');fill('#primary [data-key=celular]','900000000');
   fill('[name=correo]','prueba@example.com');fill('[name=direccion]','Dirección de demostración');
+  doc.querySelector('[name=consentimiento]').checked = consent;
   return {dom,doc,submissions,attachments,nativeShares,downloads:()=>downloads};
 }
 async function submit(doc, expectedStatus){
@@ -155,6 +156,39 @@ test('un campo obligatorio vacío muestra por qué el botón no envía', async t
   await submit(doc, /Revisa el campo «Correo electrónico»/);
   assert.equal(submissions.length, 0);
   assert.equal(attachments.length, 0);
+});
+test('sin la autorización de la Ley 29733 no se envía la matrícula', async t => {
+  const {dom, doc, submissions} = setup({consent: false});
+  t.after(() => dom.window.close());
+  await submit(doc, /autorización de tratamiento de datos personales \(Ley N\.° 29733\)/);
+  assert.equal(submissions.length, 0);
+  doc.querySelector('[name=consentimiento]').checked = true;
+  await submit(doc, /PDF adjunto en el chat del colegio/);
+  assert.equal(submissions.length, 1);
+});
+test('los términos se muestran al cargar el portal y no se cierran sin aceptar', async t => {
+  const {dom, doc} = setup();
+  t.after(() => dom.window.close());
+  const terms = doc.querySelector('#terms');
+  assert.equal(terms.open, false);
+  doc.dispatchEvent(new dom.window.Event('portal:listo'));
+  assert.equal(terms.open, true);
+  assert.equal(doc.querySelector('#terms-continue').disabled, true);
+  const cancel = new dom.window.Event('cancel', {cancelable: true});
+  terms.dispatchEvent(cancel);
+  assert.equal(cancel.defaultPrevented, true);
+  const accept = doc.querySelector('#terms-accept');
+  accept.checked = true;
+  accept.dispatchEvent(new dom.window.Event('change'));
+  assert.equal(doc.querySelector('#terms-continue').disabled, false);
+  doc.querySelector('#terms-form').dispatchEvent(new dom.window.Event('submit', {cancelable: true}));
+  assert.equal(dom.window.sessionStorage.getItem('terminos-aceptados'), '1');
+});
+test('ningún texto visible menciona al proveedor de DNI', async t => {
+  const {dom, doc} = setup();
+  t.after(() => dom.window.close());
+  await submit(doc, /PDF adjunto en el chat del colegio/);
+  assert.doesNotMatch(doc.body.textContent, /apis\s*per/i);
 });
 test('si falla el registro no se ofrece compartir y el reintento usa la misma clave', async t => {
   const {dom, doc, submissions, attachments} = setup({saveSucceeds: false});
