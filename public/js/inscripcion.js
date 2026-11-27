@@ -216,12 +216,6 @@ function validateForm() {
   return false;
 }
 
-// Integración: datos en memoria; nunca guardar DNI o contactos en localStorage.
-let submission = null;
-let pdfUrl = null;
-let preparedShare = null;
-let busy = false;
-const localWhatsApp = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
 function readEnrollment() {
   const readGroup = group => Object.fromEntries([...group.querySelectorAll('[data-key]')].map(field => [field.dataset.key, field.value.trim()]));
   return {
@@ -253,82 +247,108 @@ async function request(path, data, headers = {}) {
   } catch (error) {
     const message = error.name === 'TimeoutError'
       ? 'El servidor tardó demasiado en responder. Puedes volver a intentar con los datos del formulario.'
-      : 'No se pudo contactar al servidor de matrículas. Abre el formulario desde http://localhost:3000/ con el servidor iniciado y vuelve a intentar.';
+      : 'No se pudo contactar al servidor de matrículas. Revisa tu conexión a internet y vuelve a intentar.';
     throw new Error(message);
   }
   if(!response.ok) {
     const result=await response.json().catch(()=>({}));
-    throw new Error(result.error || 'No se pudo completar la operación. Inicia el proyecto con npm start.');
+    throw new Error(result.error || 'No se pudo completar la operación. Intenta nuevamente.');
   }
   return response;
 }
+// ---- Entrega de la ficha por WhatsApp ----
+// Todo ocurre en el navegador del usuario, así funciona igual en localhost y en Vercel:
+// - Celular o tablet con «compartir archivos»: se abre el menú del dispositivo con el PDF adjunto.
+// - Computadora (o sin «compartir archivos»): se descarga el PDF y el botón abre el chat del colegio.
+// WhatsApp nunca envía nada solo: el usuario confirma el envío en su aplicación.
+const SCHOOL_PHONE_LABEL = '+51 901 648 212';
+const WHATSAPP_MESSAGE = 'Hola, adjunto la ficha de matrícula 2027 con los datos completos.';
+const WHATSAPP_CHAT_URL = 'https://wa.me/51901648212?text=' + encodeURIComponent(WHATSAPP_MESSAGE);
+const LABEL_SUBMIT = 'Enviar matrícula';
+const LABEL_SHARE = 'Compartir PDF';
+const LABEL_CHAT = 'Abrir WhatsApp';
+
+// Datos en memoria: nunca guardar DNI o contactos en localStorage.
+let submission = null;
+let delivery = null; // {file, url, mode: 'share' | 'chat', downloaded}
+let busy = false;
+
+function pdfFileName(data) {
+  const name = (data.estudiantes[0]?.nombre || '')
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
+  return `matricula-2027${name ? '-' + name : ''}.pdf`;
+}
+function showDelivery(label, message) {
+  $('#submit-label').textContent = label;
+  $('#status').textContent = `Matrícula guardada. ${message}`;
+}
 function resetDelivery() {
-  if (pdfUrl) URL.revokeObjectURL(pdfUrl);
-  pdfUrl = null;
-  preparedShare = null;
+  if (delivery) URL.revokeObjectURL(delivery.url);
+  delivery = null;
   $('#delivery').hidden = true;
-  $('#submit-label').textContent = 'Enviar matrícula';
+  $('#submit-label').textContent = LABEL_SUBMIT;
   $('#status').textContent = '';
 }
 $('#enrollment').addEventListener('input', resetDelivery);
 $('#enrollment').addEventListener('change', resetDelivery);
 
-function prepareDelivery(pdf) {
-  if (pdfUrl) URL.revokeObjectURL(pdfUrl);
-  pdfUrl = URL.createObjectURL(pdf);
-  $('#pdf-download').href = pdfUrl;
-  const message = 'Hola, adjunto la ficha de matrícula 2027 con los datos completos.';
-  $('#whatsapp-chat').href = 'https://wa.me/51901648212?text=' + encodeURIComponent(message);
+function prepareDelivery(pdf, fileName) {
+  if (delivery) URL.revokeObjectURL(delivery.url);
+  const file = new File([pdf], fileName, {type: 'application/pdf'});
+  // En computadoras se prefiere descargar + chat: el menú «compartir» de escritorio
+  // no siempre ofrece WhatsApp y confunde más de lo que ayuda.
+  const touchDevice = window.matchMedia?.('(pointer: coarse)').matches;
+  const canShare = touchDevice && typeof navigator.share === 'function' && navigator.canShare?.({files: [file]});
+  delivery = {file, url: URL.createObjectURL(file), mode: canShare ? 'share' : 'chat', downloaded: false};
+  $('#pdf-download').href = delivery.url;
+  $('#pdf-download').download = fileName;
+  $('#whatsapp-chat').href = WHATSAPP_CHAT_URL;
   $('#delivery').hidden = false;
-  if (localWhatsApp) {
-    preparedShare = {pdf};
-    $('#submit-label').textContent = 'Compartir PDF';
-    $('#status').textContent = 'Matrícula guardada. Preparando la ficha para WhatsApp…';
-    return;
-  }
-  const files = [new File([pdf], 'matricula-2027.pdf', {type: 'application/pdf'})];
-  if (navigator.share && navigator.canShare?.({files})) {
-    preparedShare = {files, title: 'Ficha de matrícula 2027', text: message};
-    $('#submit-label').textContent = 'Compartir PDF';
-    $('#status').textContent = 'Matrícula guardada. Pulsa Compartir PDF y elige WhatsApp y el chat del colegio (+51 901 648 212).';
-    return;
-  }
-  $('#status').textContent = 'Matrícula guardada. Descarga la ficha y adjúntala en el chat del colegio.';
 }
 
-async function sharePdf() {
-  if (!localWhatsApp) {
-    try {
-      await navigator.share(preparedShare);
-      $('#status').textContent = 'Matrícula guardada. Confirma el envío de la ficha en WhatsApp.';
-    } catch (error) {
-      $('#status').textContent = error.name === 'AbortError'
-        ? 'Matrícula guardada. Puedes volver a pulsar Compartir PDF.'
-        : error.name === 'NotAllowedError'
-          ? 'Matrícula guardada. Pulsa Compartir PDF y elige WhatsApp y el chat del colegio (+51 901 648 212).'
-          : 'Matrícula guardada. Descarga la ficha y adjúntala en el chat del colegio.';
-    }
-    return;
-  }
-  $('#submit-label').textContent = 'Abriendo WhatsApp…';
-  $('#status').textContent = 'Matrícula guardada. Abriendo el chat del colegio y preparando el adjunto…';
+async function shareFile() {
   try {
-    const response = await fetch('/api/whatsapp/adjuntar', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/pdf'},
-      body: preparedShare.pdf,
-      signal: AbortSignal.timeout(80000)
-    });
-    const result = await response.json();
-    if (!response.ok || !result.ok) throw new Error(result.error || 'Revisa la ventana de WhatsApp Web.');
-    $('#status').textContent = 'PDF adjunto en el chat del colegio. Pulsa Enviar en WhatsApp.';
+    await navigator.share({files: [delivery.file], title: 'Ficha de matrícula 2027', text: WHATSAPP_MESSAGE});
+    showDelivery(LABEL_SHARE, 'Confirma el envío de la ficha en WhatsApp.');
+    return true;
   } catch (error) {
-    const message = ['TimeoutError', 'SyntaxError', 'TypeError'].includes(error.name)
-      ? 'No se pudo confirmar el adjunto. Revisa WhatsApp Web y vuelve a pulsar Compartir PDF si la ficha no aparece.'
-      : error.message;
-    $('#status').textContent = `Matrícula guardada. ${message}`;
-  } finally {
-    $('#submit-label').textContent = 'Compartir PDF';
+    if (error.name === 'AbortError') {
+      showDelivery(LABEL_SHARE, 'Puedes volver a pulsar Compartir PDF.');
+      return true;
+    }
+    if (error.name === 'NotAllowedError') {
+      // El navegador exige un toque nuevo después de guardar: queda el botón listo.
+      showDelivery(LABEL_SHARE, `Pulsa Compartir PDF y elige WhatsApp y el chat del colegio (${SCHOOL_PHONE_LABEL}).`);
+      return true;
+    }
+    return false; // El dispositivo no pudo compartir el archivo: se usa descarga + chat.
+  }
+}
+
+function openChat() {
+  const chat = window.open(WHATSAPP_CHAT_URL, '_blank');
+  if (chat) chat.opener = null;
+  return Boolean(chat);
+}
+
+// userClick indica que el usuario acaba de pulsar el botón (el navegador permite abrir pestañas).
+async function deliver(userClick) {
+  if (delivery.mode === 'share') {
+    if (await shareFile()) return;
+    delivery.mode = 'chat';
+  }
+  if (!delivery.downloaded) {
+    $('#pdf-download').click();
+    delivery.downloaded = true;
+  }
+  const fileName = delivery.file.name;
+  if (!userClick) {
+    showDelivery(LABEL_CHAT, `La ficha se descargó como «${fileName}». Pulsa Abrir WhatsApp, adjunta el archivo en el chat del colegio y pulsa Enviar.`);
+  } else if (openChat()) {
+    showDelivery(LABEL_CHAT, `En el chat del colegio, adjunta «${fileName}» (clip › Documento) y pulsa Enviar.`);
+  } else {
+    showDelivery(LABEL_CHAT, `Tu navegador bloqueó la ventana. Usa el enlace «Abrir chat del colegio» y adjunta «${fileName}».`);
   }
 }
 
@@ -336,39 +356,38 @@ $('#enrollment').onsubmit = async event => {
   event.preventDefault();
   if (busy) return;
   $('#status').textContent = '';
-  if (!preparedShare && !validateForm()) return;
+  if (!delivery && !validateForm()) return;
   busy = true;
   let controlsLocked = false;
   try {
-    if (!preparedShare) {
+    if (!delivery) {
       $('#status').textContent = 'Verificando los datos de contacto…';
       $('#back').disabled = true;
       if (!await ensureFamily()) return;
     }
     setBusy(true);
     controlsLocked = true;
-    if (preparedShare) {
-      await sharePdf();
-    } else {
-      const data = readEnrollment();
-      const fingerprint = JSON.stringify(data);
-      if (submission?.fingerprint !== fingerprint) submission = {fingerprint, id: crypto.randomUUID()};
-      if (!submission.pdf) {
-        $('#status').textContent = 'Guardando matrícula y preparando el PDF…';
-        const response = await request('/api/matriculas', data, {
-          Accept: 'application/pdf',
-          'Idempotency-Key': submission.id
-        });
-        if (!response.headers.get('Content-Type')?.startsWith('application/pdf')) {
-          throw new Error('No se recibió la ficha PDF. Vuelve a pulsar Enviar matrícula.');
-        }
-        submission.pdf = await response.blob();
-      }
-      prepareDelivery(submission.pdf);
-      // Un solo clic: tras guardar en Google Sheets se prepara WhatsApp de inmediato.
-      // Si falla (QR sin vincular, celular que exige otro toque), el botón queda como "Compartir PDF".
-      if (preparedShare) await sharePdf();
+    if (delivery) {
+      await deliver(true);
+      return;
     }
+    const data = readEnrollment();
+    const fingerprint = JSON.stringify(data);
+    if (submission?.fingerprint !== fingerprint) submission = {fingerprint, id: crypto.randomUUID()};
+    if (!submission.pdf) {
+      $('#status').textContent = 'Guardando matrícula y preparando el PDF…';
+      const response = await request('/api/matriculas', data, {
+        Accept: 'application/pdf',
+        'Idempotency-Key': submission.id
+      });
+      if (!response.headers.get('Content-Type')?.startsWith('application/pdf')) {
+        throw new Error('No se recibió la ficha PDF. Vuelve a pulsar Enviar matrícula.');
+      }
+      submission.pdf = await response.blob();
+    }
+    // Un solo clic: en cuanto Google Sheets confirma el registro se entrega la ficha.
+    prepareDelivery(submission.pdf, pdfFileName(data));
+    await deliver(false);
   } catch (error) {
     $('#status').textContent = error.message;
   } finally {
