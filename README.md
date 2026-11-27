@@ -13,13 +13,16 @@ Frontend del colegio, servidor Node.js, fichas familiares PDF, consulta de DNI c
 │   │   ├── integraciones.css  Formulario, contactos y entrega del PDF
 │   │   └── inicio.css         Portada, pantalla de carga y animaciones
 │   ├── js/
-│   │   ├── inscripcion.js     Formulario, consulta DNI, envío y WhatsApp
+│   │   ├── inscripcion.js     Formulario, consulta DNI, envío y entrega por WhatsApp
 │   │   └── inicio.js          Pantalla de carga e inclinación 3D de la portada
 │   └── assets/img/            Escudo, fondos e imágenes de la portada (inicio/)
-├── backend/                   Servidor Express: API, validación, PDF, DNI y WhatsApp
+├── api/index.js               Entrada de Vercel (expone la app Express como función)
+├── backend/                   Servidor Express: API, validación, PDF y DNI
 ├── google-apps-script/        Script que escribe en el Google Sheet
 ├── scripts/iniciar.ps1        Arranque en Windows
+├── docs/                      Guías de despliegue (Vercel y subdominio)
 ├── tests/                     Pruebas con node:test
+├── vercel.json                Configuración de Vercel (rutas, función y encabezados)
 ├── .vscode/launch.json        Perfil F5 de Visual Studio Code
 └── .env.example               Variables de entorno necesarias
 ```
@@ -65,11 +68,13 @@ La [documentación oficial de DNI](https://dniruc.apisperu.com/doc#tag/dni) incl
 
 ## WhatsApp y PDF familiar
 
-**Enviar matrícula** funciona con un solo clic: guarda los datos en Google Sheets y, en cuanto Google confirma el registro, prepara la ficha en WhatsApp. En `localhost`, el servidor abre WhatsApp Web en Chrome o Edge, entra al chat del colegio **+51 901 648 212** y deja el PDF adjunto para que el usuario pulse **Enviar** en WhatsApp. El botón permanece desactivado durante el proceso y muestra **Abriendo WhatsApp…** mientras prepara el adjunto. Si ese paso falla (por ejemplo, falta vincular el QR), el botón cambia a **Compartir PDF** para reintentar sin repetir la matrícula. Si Google no confirma el registro, no se abre WhatsApp.
+**Enviar matrícula** funciona con un solo clic: guarda los datos en Google Sheets y, en cuanto Google confirma el registro, entrega la ficha PDF para enviarla al chat del colegio **+51 901 648 212**. Si Google no confirma el registro, no se entrega la ficha. Todo el envío ocurre en el navegador de la familia, así que funciona igual en `localhost` y publicado en Vercel; el servidor no abre navegadores ni guarda sesiones de WhatsApp.
 
-La primera vez, vincula la sesión de WhatsApp Web desde **Dispositivos vinculados** en el celular. Si aparece un QR, escanéalo y vuelve a pulsar **Compartir PDF**. La sesión se conserva en `work/whatsapp-profile`, que se excluye de Git. La opción de adjuntar automáticamente requiere ejecutar el servidor en la misma computadora. Los enlaces de descarga y del chat siguen disponibles.
+- **Celular o tablet:** se abre el menú **Compartir** del dispositivo con la ficha adjunta. La familia elige WhatsApp, el chat del colegio y confirma. Si el celular pide un toque más, el botón cambia a **Compartir PDF**.
+- **Computadora:** la ficha se descarga como `matricula-2027-<nombre-del-alumno>.pdf` y el botón cambia a **Abrir WhatsApp**, que abre el chat del colegio (WhatsApp Web o la aplicación) con el mensaje escrito. Solo falta adjuntar el archivo y pulsar **Enviar**.
+- **Respaldo:** si el dispositivo no puede compartir el archivo, se usa el flujo de computadora. Los enlaces **Descargar ficha PDF** y **Abrir chat del colegio** siempre quedan visibles.
 
-En celulares, abre el portal publicado por **HTTPS**. En un navegador que admite compartir archivos, al enviar la matrícula se abre el menú del dispositivo con la ficha adjunta; si el celular pide otro toque, aparece **Compartir PDF**. Elige WhatsApp, selecciona el chat del colegio y confirma el envío. El navegador deja la selección del chat en manos del usuario. Si el dispositivo no admite compartir PDF, usa los enlaces para descargar la ficha y abrir el chat.
+WhatsApp nunca envía nada solo: el mensaje sale únicamente cuando la familia pulsa **Enviar**. Si después de enviar se edita el formulario, el botón vuelve a **Enviar matrícula** y el siguiente envío es una solicitud nueva.
 
 - Un alumno: una ficha individual, inscripción S/ 250, matrícula S/ 450 y pensión S/ 500.
 - Dos hermanos: una página familiar, dos inscripciones de S/ 250 y una fila de matrícula de S/ 450; pensiones de S/ 500 y S/ 470. Diciembre del primer alumno figura en S/ 480, tal como en la imagen recibida.
@@ -80,8 +85,13 @@ Las tablas tienen espacios para B/V, operación y fecha; no se marcan pagos como
 
 ## Publicar
 
-Se requiere un alojamiento que ejecute Node.js; GitHub Pages no ejecuta el backend. Configurar `HOST=0.0.0.0`, `PORT` y las dos variables de Google como secretos del alojamiento. Usar HTTPS y conservar frontend y API en el mismo origen. Para un proxy inverso, configurar `trust proxy` de Express según la topología real antes de habilitar tráfico público, para que límites de IP y comprobación de origen funcionen correctamente.
+El portal se publica en **Vercel** y se enlaza desde la landing de WordPress con un subdominio (por ejemplo `matricula.<dominio-del-colegio>`). La guía completa, con los registros DNS que debe crear el equipo de WordPress, está en [docs/DESPLIEGUE-VERCEL.md](docs/DESPLIEGUE-VERCEL.md).
+
+- `public/` lo sirve la CDN de Vercel y `/api/*` lo atiende la función `api/index.js`, que usa la misma app Express que `npm start`.
+- `vercel.json` repite en las páginas estáticas los encabezados de seguridad que `helmet` aplica a la API.
+- En Vercel, la app confía en el proxy de Vercel (`trust proxy`) para que la comprobación de origen y los límites por IP vean al visitante real. En otro alojamiento detrás de un proxy, ajusta `trust proxy` según la topología antes de abrir el tráfico.
+- Las variables `GOOGLE_SCRIPT_URL`, `GOOGLE_SCRIPT_SECRET` y `APISPERU_TOKEN` se cargan en **Vercel → Settings → Environment Variables**, nunca en el repositorio.
 
 Antes de recibir datos reales, revisar los permisos del Sheet: contiene DNI y datos de menores y sus contactos. Mantener acceso solo para las personas autorizadas del colegio. No registrar cuerpos de solicitudes ni claves en los logs. El servidor limita solicitudes y solo publica la carpeta `public/`; el código del servidor, los scripts y `.env` no son accesibles como archivos estáticos.
 
-No se necesita WhatsApp Business Platform para el flujo manual elegido.
+No se necesita WhatsApp Business Platform: la familia envía la ficha desde su propio WhatsApp.

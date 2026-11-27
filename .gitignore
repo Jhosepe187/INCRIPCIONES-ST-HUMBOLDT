@@ -4,9 +4,12 @@ node_modules/
 # Configuración local y secretos
 .env
 
-# Datos de ejecución (sesión de WhatsApp Web) y registros
+# Datos de ejecución y registros
 work/
 *.log
+
+# Vercel CLI
+.vercel/
 
 # Sistema operativo y herramientas locales
 .DS_Store
